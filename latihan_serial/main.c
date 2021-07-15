@@ -135,26 +135,38 @@ int main(int argc, char *argv[]){
 
     
     
-    // Save tty settings, also checking for error
+    // Simpen konfigurasi
     if (tcsetattr(serial_port, TCSANOW, &tty) != 0) {
         printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
         return 1;
     }
 
 
-    // baca data serial (ancer"e kui 0x0D 0x0A)
+    // baca data serial (end 0x0D 0x0A)
     char wadah_bacaan[256];
-    memset(wadah_bacaan, 0, sizeof(wadah_bacaan));
+    char simpen;
+    int total = 0;
 
-    int num_byte = read(serial_port, wadah_bacaan, sizeof(wadah_bacaan));
-
-    if (num_byte < 0) {
-        printf("Error reading: %s", strerror(errno));
-        return 1;
-    }
-
+    memset(&wadah_bacaan, 0, sizeof(wadah_bacaan));
     while(1){
-        printf("%s\n", wadah_bacaan);
+
+        simpen = 0;
+        int num_byte = read(serial_port, &simpen, 1);
+        if (num_byte < 0) {
+            printf("Error reading: %s", strerror(errno));
+            break;
+        }
+
+        wadah_bacaan[total] = simpen;
+        total++;
+        if(wadah_bacaan[total-1] == 0x0A && wadah_bacaan[total-2] == 0x0D){
+            if(strstr(wadah_bacaan, "GPRMC")){
+                printf("%s\n", wadah_bacaan);
+            }
+            memset(wadah_bacaan,0,sizeof(wadah_bacaan));
+            total=0;
+        }
+        
     }
 
     close(serial_port);
