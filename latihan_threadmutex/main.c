@@ -11,7 +11,7 @@ void* trythis(void* arg)
 {
     unsigned long i = 0;
     counter += 1;
-    printf("\n Job %d has started\n", counter);
+    printf("\n Job %d has started \n", counter);
   
     for (i = 0; i < (0xFFFFFFFF); i++)
         ;
