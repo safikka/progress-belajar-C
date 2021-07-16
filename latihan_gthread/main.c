@@ -24,7 +24,17 @@ int main(){
 
     gint datadummy = 10;
     GThread *gthread = NULL;
-    gthread = g_thread_new("fungsi1", trit_1, GINT_TO_POINTER(datadummy));
+    GError *error = NULL;
+    
+
+    gthread = g_thread_try_new("fungsi1", trit_1, GINT_TO_POINTER(datadummy), &error);
+    
+    // munculin info error
+    if(error != NULL){
+        g_print("error code: %d\n", error->code);
+        g_print("error msg: %s\n", error->message);
+        g_error_free(error);
+    }
     g_thread_join(gthread);
     return 0;
 }
