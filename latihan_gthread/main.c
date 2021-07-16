@@ -6,28 +6,62 @@
 #include <string.h>
 #include <sys/syscall.h>
 
-gpointer trit_1 (gpointer data){
-    g_print("ini %s dengan id %ld\n",__func__, syscall(__NR_gettid));
-    
-    // coba nampilin data yang di pass
-    gint temp = GPOINTER_TO_INT(data);
-    g_print("ini data yang diterima : %d\n", temp);
-    g_usleep(2000);
+G_LOCK_DEFINE(trit_mutex);
 
-    // exit
-    g_thread_exit(0);
+gpointer trit_1 (gpointer data){
+    while(1){
+        
+        // SET LOCK
+        G_LOCK(trit_mutex);
+        
+        g_print("ini %s dengan id %ld\n",__func__, syscall(__NR_gettid));
+    
+        // coba nampilin data yang di pass
+        gint temp = GPOINTER_TO_INT(data);
+        g_print("ini data yang diterima : %d\n", temp);
+        g_print("process 10 detik ...\n");
+        g_usleep(2000000);
+        g_print("selesai\n");
+
+        // SET UNLOCK
+        G_UNLOCK(trit_mutex);
+		g_usleep (1);
+
+    }
+}
+
+gpointer trit_2 (gpointer data){
+    while(1){
+        
+        // SET LOCK
+        G_LOCK(trit_mutex);
+        
+        g_print("ini %s dengan id %ld\n",__func__, syscall(__NR_gettid));
+    
+        // coba nampilin data yang di pass
+        gint temp = GPOINTER_TO_INT(data);
+        g_print("ini data yang diterima : %d\n", temp);
+        g_print("process 10 detik ...\n");
+        g_usleep(2000000);
+        g_print("selesai\n");
+
+        // SET UNLOCK
+        G_UNLOCK(trit_mutex);
+        g_usleep (1);
+
+    }
 }
 
 int main(){
-    g_print("Hello World\n");
-    g_print("tes doang pake gprint dari glib\n");
+    g_print("Program Mulai!\n");
 
-    gint datadummy = 10;
-    GThread *gthread = NULL;
+    gint datadummy = rand();
+    GThread *gthread1 = NULL, *gthread2 = NULL;
     GError *error = NULL;
     
 
-    gthread = g_thread_try_new("fungsi1", trit_1, GINT_TO_POINTER(datadummy), &error);
+    gthread1 = g_thread_try_new("fungsi1", trit_1, GINT_TO_POINTER(datadummy), &error);
+    gthread2 = g_thread_try_new("fungsi2", trit_2, GINT_TO_POINTER(datadummy), &error);
     
     // munculin info error
     if(error != NULL){
@@ -35,6 +69,10 @@ int main(){
         g_print("error msg: %s\n", error->message);
         g_error_free(error);
     }
-    g_thread_join(gthread);
+
+    g_thread_join(gthread1);
+    g_thread_join(gthread2);
+
+    g_print("\nProgram Selesai!\n");
     return 0;
 }
