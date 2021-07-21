@@ -1,5 +1,5 @@
 *{
-    background-color: white;
+    background-color: grey;
 }
 
 #window-gan {
@@ -8,11 +8,18 @@
 
 #label {
     padding: 10px 10px;
-    color: red;
+    color: white;
 }
 
 #btn-gan {
     padding: 10px 10px;
     background-color: red;
+}
 
+#box_kanan{
+    border: dashed 5px red; 
+}
+
+#box_kiri{
+    border: dashed 5px blue; 
 }

@@ -19,7 +19,14 @@ struct list_widget{
     GtkWidget   *g_lbl_gga;
     GtkWidget   *g_lbl_gsv;
     GtkWidget   *g_lbl_gsa;
+    GtkWidget   *box_body;
+    GtkWidget   *box_utama;
+    GtkWidget   *box_kanan;
+    GtkWidget   *box_kiri;
     GtkWidget   *g_btn;
+    GtkWidget   *g_btn_show;
+    GtkWidget   *g_btn_hide;
+    GtkWidget   *label_tes;
 } ui_widget;
 
 GtkBuilder  *builder;
@@ -39,6 +46,10 @@ void ui_init_css(){
     gtk_widget_set_name(ui_widget.g_lbl_gga, "label");
     gtk_widget_set_name(ui_widget.g_lbl_gsv, "label");
     gtk_widget_set_name(ui_widget.g_lbl_gsa, "label");
+    gtk_widget_set_name(ui_widget.box_body, "box_body");
+    gtk_widget_set_name(ui_widget.box_utama, "box_utama");
+    gtk_widget_set_name(ui_widget.box_kanan, "box_kanan");
+    gtk_widget_set_name(ui_widget.box_kiri, "box_kiri");
     gtk_widget_set_name(ui_widget.g_btn, "btn_gan");
 
     gtk_style_context_add_provider_for_screen(gdk_screen_get_default(), GTK_STYLE_PROVIDER(css_nya), GTK_STYLE_PROVIDER_PRIORITY_USER);
@@ -46,7 +57,21 @@ void ui_init_css(){
 
 
 void on_btn_update_clicked(GtkButton *btn, gpointer data){
+    g_mutex_lock(&lock);
     g_print("tombol ditekan\n");
+    g_mutex_unlock(&lock);
+}
+
+void on_btn_show(GtkButton *btn, gpointer data){
+    g_mutex_lock(&lock);
+    gtk_widget_show(ui_widget.label_tes);
+    g_mutex_unlock(&lock);
+}
+
+void on_btn_hide(GtkButton *btn, gpointer data){
+    g_mutex_lock(&lock);
+    gtk_widget_hide(ui_widget.label_tes);
+    g_mutex_unlock(&lock);
 }
 
 gboolean gtk_get_object_helper(GtkWidget **_widget_ , gchar *_widget_name_,...){
@@ -141,8 +166,9 @@ gpointer baca_serial(gpointer _data_){
 
             if(strstr(wadah_bacaan, "RMC")){
                 // printf("%s\n", wadah_bacaan);
-
-                gtk_label_set_text(GTK_LABEL(ui_widget.g_lbl_rmc),wadah_bacaan);
+                if(ui_widget.g_lbl_rmc){               
+                  gtk_label_set_text(GTK_LABEL(ui_widget.g_lbl_rmc),wadah_bacaan);
+                }
                 
                 // char *token;
                 
@@ -158,20 +184,25 @@ gpointer baca_serial(gpointer _data_){
             }
             else if(memcmp(wadah_bacaan+3, "GGA", 3) == 0){
                 // printf("%s\n", wadah_bacaan);
-
-                gtk_label_set_text(GTK_LABEL(ui_widget.g_lbl_gga),wadah_bacaan);
+                if(ui_widget.g_lbl_gga){
+                    gtk_label_set_text(GTK_LABEL(ui_widget.g_lbl_gga),wadah_bacaan);
+                }
                 
             }
             else if(strstr(wadah_bacaan, "GSV")){
                 // printf("%s\n", wadah_bacaan);
 
-                gtk_label_set_text(GTK_LABEL(ui_widget.g_lbl_gsv),wadah_bacaan);
+                if(ui_widget.g_lbl_gsv){
+                    gtk_label_set_text(GTK_LABEL(ui_widget.g_lbl_gsv),wadah_bacaan);
+                }
                 
             }
             else if(memcmp(wadah_bacaan+1, "GPGSA",5) == 0){
                 // printf("%s\n", wadah_bacaan);
 
-                gtk_label_set_text(GTK_LABEL(ui_widget.g_lbl_gsa),wadah_bacaan);
+                if(ui_widget.g_lbl_gsa){
+                    gtk_label_set_text(GTK_LABEL(ui_widget.g_lbl_gsa),wadah_bacaan);
+                }
                 
             }
             // printf("%s\n", wadah_bacaan);
@@ -203,11 +234,20 @@ int main(int argc, char *argv[]){
     gtk_get_object_helper(&ui_widget.g_lbl_gsa,"label_data1");
     gtk_get_object_helper(&ui_widget.g_lbl_gsv,"label_data2");
     gtk_get_object_helper(&ui_widget.g_lbl_gga,"label_data3");
+    gtk_get_object_helper(&ui_widget.box_body,"box_body");
+    gtk_get_object_helper(&ui_widget.box_utama,"box_utama");
+    gtk_get_object_helper(&ui_widget.box_kanan,"box_kanan");
+    gtk_get_object_helper(&ui_widget.box_kiri,"box_kiri");
+    gtk_get_object_helper(&ui_widget.g_btn_hide,"btn_hide");
+    gtk_get_object_helper(&ui_widget.g_btn_show,"btn_show");
+    gtk_get_object_helper(&ui_widget.label_tes,"label_tes");
 
     ui_init_css();
 
     gtk_builder_connect_signals(builder,NULL);
-    g_signal_connect (ui_widget.g_btn, "clicked", G_CALLBACK (on_btn_update_clicked),NULL);
+    g_signal_connect(ui_widget.g_btn, "clicked", G_CALLBACK (on_btn_update_clicked),NULL);
+    g_signal_connect(ui_widget.g_btn_show, "clicked", G_CALLBACK(on_btn_show),NULL);
+    g_signal_connect(ui_widget.g_btn_hide, "clicked", G_CALLBACK(on_btn_hide),NULL);
     g_signal_connect_swapped(G_OBJECT(ui_widget.window),"destroy",G_CALLBACK(gtk_main_quit),NULL);
 
     g_object_unref(builder);
