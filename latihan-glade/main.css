@@ -1,0 +1,18 @@
+*{
+    background-color: white;
+}
+
+#window-gan {
+    transition: 0.3s;
+}
+
+#label {
+    padding: 10px 10px;
+    color: red;
+}
+
+#btn-gan {
+    padding: 10px 10px;
+    background-color: red;
+
+}
