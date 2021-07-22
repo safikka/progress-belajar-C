@@ -353,13 +353,69 @@ gpointer baca_serial(gpointer _data_){
                         
                         char speed_satuan[10];
                         char speed_koma[10];
+                        int len_speed = strlen(token) + 1;
+                        char tmp[len_speed];
+
                         memset(speed_satuan,0,sizeof(speed_satuan));
                         memset(speed_koma,0,sizeof(speed_koma));
-                        memcpy(speed_satuan,token,1);
-                        memcpy(speed_koma,token+2,3);
+                        memset(tmp,0,sizeof(tmp));
+                        
+                        memcpy(tmp,token,len_speed-1);
+                        char *token_tmp;
+                        token_tmp = strtok(tmp,".");
+                        if(token_tmp != NULL){
+                            memcpy(speed_satuan,token_tmp,strlen(token_tmp));
+                            memcpy(speed_koma,token + strlen(speed_satuan) + 1,len_speed-strlen(speed_satuan)-2);
+                        }
+                        float speed_koma_tmp = atof(speed_koma);
+                        for(int i = 0; i<strlen(speed_koma); i++){
+                            speed_koma_tmp /= 10; 
+                        }
 
-                        double speed_konversi = (atof(speed_satuan) + (atof(speed_koma)/100)) * 1.852;
-                        g_print("%lf Km/h\n", speed_konversi);
+                        double speed_konversi = (atof(speed_satuan) + speed_koma_tmp) * 1.852;
+                        g_print("%lf Km/h, speedsatuan: %s, speedkoma: %s, token: %s\n", speed_konversi, speed_satuan, speed_koma, token);
+
+                    }
+
+                    case 10:{
+
+                        // Date parsing
+
+                        // saat void
+                        if(state == 'V'){
+                            break;
+                        }
+                        
+                        // char hari[10];
+                        // char tahun[10];
+                        // memset(speed_satuan,0,sizeof(speed_satuan));
+                        // memset(speed_koma,0,sizeof(speed_koma));
+                        // memcpy(speed_satuan,token,1);
+                        // memcpy(speed_koma,token+2,3);
+
+                        // double speed_konversi = (atof(speed_satuan) + (atof(speed_koma)/100)) * 1.852;
+                        // g_print("%lf Km/h\n", speed_konversi);
+
+                    }
+
+                    case 11:{
+
+                        // Direction Magnetion Parsing
+
+                        // saat void
+                        if(state == 'V'){
+                            break;
+                        }
+                        
+                        // char speed_satuan[10];
+                        // char speed_koma[10];
+                        // memset(speed_satuan,0,sizeof(speed_satuan));
+                        // memset(speed_koma,0,sizeof(speed_koma));
+                        // memcpy(speed_satuan,token,1);
+                        // memcpy(speed_koma,token+2,3);
+
+                        // double speed_konversi = (atof(speed_satuan) + (atof(speed_koma)/100)) * 1.852;
+                        // g_print("%lf Km/h\n", speed_konversi);
 
                     }
 
