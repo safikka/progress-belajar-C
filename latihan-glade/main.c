@@ -139,6 +139,15 @@ gpointer baca_serial(gpointer _data_){
     
     g_mutex_init(&lock);
 
+    // status gps
+    char state = 'V';
+
+    // data konversi lat lon
+    double konversi_lat = 0.0;
+    double dir_lat = 0;
+    double konversi_lon = 0.0;
+    int dir_lon = 0;
+
     while(1){
 
         simpen = 0;
@@ -170,17 +179,177 @@ gpointer baca_serial(gpointer _data_){
                   gtk_label_set_text(GTK_LABEL(ui_widget.g_lbl_rmc),wadah_bacaan);
                 }
                 
-                // char *token;
+                char *token;
                 
-                // /* get the first token */
-                // token = strtok(wadah_bacaan, ",");
+                /* get the first token */
+                token = strtok(wadah_bacaan, ",");
                 
-                // /* walk through other tokens */
-                // while( token != NULL ) {
-                //     printf( "- %s\n", token );
+                /* walk through other tokens */
+                int koma= 0;
+
+
+                while( token != NULL ) {
+                    koma++;
                     
-                //     token = strtok(NULL, ",");
-                // }
+                    switch (koma)
+                    {
+
+                    case 2:{
+                        //hhmmss.ss
+                        char time[14];
+                        char jam[3];
+                        char menit[3];
+                        char detik[6];
+                        memset(time,0,sizeof(time));
+                        memset(jam,0,sizeof(jam));
+                        memset(menit,0,sizeof(menit));
+                        memset(detik,0,sizeof(detik));
+
+                        memcpy(jam, token, 2);
+                        memcpy(menit, token+2, 2);  //jangan lupa digeser indexnya token+2
+                        memcpy(detik, token+4, 5);  //jangan lupa digeser indexnya
+
+                        sprintf(time, "%02i:%s:%s", atoi(jam)+7, menit, detik);
+                        g_print("hasil susun waktu: %s\n", time);
+                        break;
+                    }
+                    
+                    case 3:{
+                        // Position status (A = data valid, V = data invalid)
+                        char status[2];
+                        
+                        state = token[0];
+                        if(state != 'V' && state != 'A'){
+                            state = 'V';
+                        }
+
+                        memset(status,0,sizeof(status));
+                        memcpy(status,token,1);
+                        g_print("statusnya: %s, state: %c\n", status, state);
+                        break;
+                    }
+
+                    case 4:{
+                        
+                        // saat void
+                        if(state == 'V'){
+                            break;
+                        }
+
+                        // Latitude (DDmm.mm)
+                        char lat[25];
+                        char derajat[3];
+                        char menit[3];
+                        char belakangkoma[5];
+
+
+                        memset(lat,0,sizeof(lat));
+                        memset(derajat,0,sizeof(derajat));
+                        memset(menit,0,sizeof(menit));
+                        memset(belakangkoma,0,sizeof(belakangkoma));
+                        
+                        memcpy(derajat, token, 2);
+                        memcpy(menit, token+2, 2);
+                        memcpy(belakangkoma, token+5, 4);
+                        
+                        konversi_lat = atof(derajat) + (((atof(belakangkoma)/10000) + atof(menit))/60.0);
+                        
+                        // g_print("derajat: %s\n", derajat);
+                        // g_print("menit: %s\n", menit);
+                        // g_print("belakangkoma: %s\n", belakangkoma);
+                        // g_print("lat: %2lf\n", konversi_lat);
+                        break;
+                    }
+
+                    case 5:{
+                        
+                        // saat void
+                        if(state == 'V'){
+                            break;
+                        }
+
+                        char latdir[2];
+                        memset(latdir,0,sizeof(latdir));
+                        memcpy(latdir,token,1);
+                        if(memcmp(latdir,"S",1) == 0){
+                            dir_lat = -1.0;
+                        }
+                        else if(memcmp(latdir,"N",1) == 0){
+                            dir_lat = 1.0;
+                        }
+
+                        double lat_fix = dir_lat * konversi_lat;
+                        g_print("lat: %lf\n", lat_fix);
+
+                        break;
+                    }
+
+                    case 6:{
+                        
+                        // saat void
+                        if(state == 'V'){
+                            break;
+                        }
+                        
+                        // Longitude (DDDmm.mm)
+                        char lon[25];
+                        char derajat_lon[4];
+                        char menit_lon[3];
+                        char belakangkoma_lon[5];
+
+
+                        memset(lon,0,sizeof(lon));
+                        memset(derajat_lon,0,sizeof(derajat_lon));
+                        memset(menit_lon,0,sizeof(menit_lon));
+                        memset(belakangkoma_lon,0,sizeof(belakangkoma_lon));
+                        
+                        memcpy(derajat_lon, token, 3);
+                        memcpy(menit_lon, token+3, 2);
+                        memcpy(belakangkoma_lon, token+6, 4);
+                        
+                        konversi_lon = atof(derajat_lon) + (((atof(belakangkoma_lon)/10000) + atof(menit_lon))/60.0);
+                        
+                        // g_print("derajat: %s, ukuran: %li\n", derajat_lon, sizeof(derajat_lon));
+                        // g_print("menit: %s\n", menit_lon);
+                        // g_print("belakangkoma: %s\n", belakangkoma_lon);
+                        // g_print("lon: %2lf\n", konversi_lon);
+                        break;
+                    }
+
+                    case 7:{
+                        
+                        // saat void
+                        if(state == 'V'){
+                            break;
+                        }
+                        
+                        char londir[2];
+                        memset(londir,0,sizeof(londir));
+                        memcpy(londir,token,1);
+                        if(memcmp(londir,"W",1) == 0){
+                            dir_lon = -1.0;
+                        }
+                        else if(memcmp(londir,"E",1) == 0){
+                            dir_lon = 1.0;
+                        }
+
+                        double lon_fix = dir_lon * konversi_lon;
+                        g_print("lon: %lf\n", lon_fix);
+
+                        break;
+                    }
+
+                    default:
+                        break;
+                    }
+
+                    
+                    // printf( "- %s\n", token );
+                    
+                    token = strtok(NULL, ",");
+                    if(token == NULL) break;
+                }
+                g_print("-------------------------------------\n");
             }
             else if(memcmp(wadah_bacaan+3, "GGA", 3) == 0){
                 // printf("%s\n", wadah_bacaan);
