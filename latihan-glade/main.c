@@ -13,6 +13,9 @@
 #include <gtk/gtk.h>
 #include <glib.h>
 
+// Konstanta
+#define  KNOT_TO_KMH 1.852
+
 struct list_widget{
     GtkWidget   *window;
     GtkWidget   *g_lbl_rmc;
@@ -337,6 +340,27 @@ gpointer baca_serial(gpointer _data_){
                         g_print("lon: %lf\n", lon_fix);
 
                         break;
+                    }
+
+                    case 8:{
+
+                        // Konversi Speed Knot ke Km/h
+
+                        // saat void
+                        if(state == 'V'){
+                            break;
+                        }
+                        
+                        char speed_satuan[10];
+                        char speed_koma[10];
+                        memset(speed_satuan,0,sizeof(speed_satuan));
+                        memset(speed_koma,0,sizeof(speed_koma));
+                        memcpy(speed_satuan,token,1);
+                        memcpy(speed_koma,token+2,3);
+
+                        double speed_konversi = (atof(speed_satuan) + (atof(speed_koma)/100)) * 1.852;
+                        g_print("%lf Km/h\n", speed_konversi);
+
                     }
 
                     default:
