@@ -126,7 +126,7 @@ gpointer baca_serial(gpointer _data_){
 
     // mulai baca
     while(1){
-        wadah = suart_read_chuncked_data(open_serial,1,(unsigned char *) "\n",1,&received);
+        wadah = suart_read_chuncked_data(open_serial,100,(unsigned char *) "\n",1,&received);
         if(wadah != NULL){
 
             g_mutex_lock(&lock);
@@ -146,11 +146,12 @@ gpointer baca_serial(gpointer _data_){
                 
                 // potong dulu data raw disetiap koma ","
                 char *potong;
-                potong = strtok(wadah,",");
+                potong = strtok((char *)wadah,",");
+                g_print("isi potong: %s\n", potong);
 
 
                 // tandai tiap potongan di koma nya
-                int count_koma = 0;
+                int8_t count_koma = 0;
 
                 while(potong != NULL){
                     
@@ -168,8 +169,62 @@ gpointer baca_serial(gpointer _data_){
 
                     count_koma++;
 
-                    
+                    // nah tinggal disesuain deh pas koma
+                    // keberapa ini mau diparsing apa
 
+                    switch(count_koma){
+                        
+                        // ini parameter ke-2, berati data
+                        // waktu GMT
+                        case 2:{
+                            
+                            //format dari docnya
+                            //hhmmss.ss
+
+                            // seperti biasa bikin dulu wadahnya
+                            char jam[3];
+                            char menit[3];
+                            char detik[6];
+                            memset(time_gps,0,sizeof(time_gps));
+                            memset(jam,0,sizeof(jam));
+                            memset(menit,0,sizeof(menit));
+                            memset(detik,0,sizeof(detik));
+
+                            
+                            /**
+                             * @brief
+                             * Copy data yang terpotong ke wadah
+                             * jangan lupa kalo mau Copy sesuaikan letak data
+                             * contoh: 144326.00
+                             * 
+                             * letak jam = potong (14)
+                             * letak menit = potong+2 karena nambah 2 digit (43)
+                             * letak detik = potong+4 karena nambah 4 digit (26) 
+                             * 
+                             */
+                            memcpy(jam, potong, 2);
+                            memcpy(menit, potong+2, 2);
+                            memcpy(detik, potong+4, 2);
+
+
+                            // data copy masukin ke var time_gps (global)
+                            // biar bisa dipake di lain case
+                            // di jam karena GMT, sehingga +7 sesuai WIB
+                            sprintf(time_gps, "%02i:%s:%s", atoi(jam)+7, menit, detik);
+                            g_print("hasil susun waktu: %s\n", time_gps);
+                            
+                            
+                            // jangan lupa di break tiap case
+                            break;
+                        }
+
+                    }
+
+                    // JANGAN LUPA DIKASIH BREAK CUYYY!!!
+                    // PANIK ERROR NANGIS MAMPUS :(
+
+                    potong = strtok(NULL, ",");              
+                    if(potong == NULL) break;
                 }
 
             }
