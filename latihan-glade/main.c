@@ -348,38 +348,52 @@ gpointer baca_serial(gpointer _data_){
 
                     case 8:{
 
-                        // Konversi Speed Knot ke Km/h
-
                         // saat void
                         if(state == 'V'){
                             break;
                         }
+
+                        // Konversi Speed Knot ke Km/h
+
+                        int len_speed = strlen(token) + 1;
+                        char tmp[len_speed];
+                        memset(tmp,0,len_speed*sizeof(char));
+                        memcpy(tmp,token,len_speed*sizeof(char));
                         
                         char speed_satuan[10];
                         char speed_koma[10];
-                        int len_speed = strlen(token) + 1;
-                        char tmp[len_speed];
+                        memset(speed_satuan,0,sizeof(speed_satuan));
+                        memset(speed_koma,0,sizeof(speed_koma));
 
-                        // memset(speed_satuan,0,sizeof(speed_satuan));
-                        // memset(speed_koma,0,sizeof(speed_koma));
-                        // memset(tmp,0,sizeof(tmp));
+                        int index = 0;
+                        gboolean isTitik = FALSE;
+
+                        // milah string yang ada "." nya
+                        for(int i=0;i<strlen(tmp);i++){
+                            if(tmp[i] == 0x2e){
+                                isTitik = TRUE;
+                                index= 0;
+                                continue;
+                            }
+                            if(isTitik == FALSE){
+                                speed_satuan[index] = tmp[i];
+                                index++;
+                            }
+                            else{
+                                speed_koma[index] = tmp[i];
+                                index++;
+                            }
+                        }
+
+                        // bagi si belakang koma
+                        double speed_koma_tmp = atof(speed_koma);
+                        for(int j=0; j<strlen(speed_koma); j++){
+                            speed_koma_tmp /= 10;
+                        }
                         
-                        // memcpy(tmp,token,len_speed-1);
-                        // char *token_tmp;
-                        // token_tmp = strtok(tmp,".");
-                        // if(token_tmp != NULL){
-                        //     memcpy(speed_satuan,token_tmp,strlen(token_tmp));
-                        //     memcpy(speed_koma,token + strlen(speed_satuan) + 1,len_speed-strlen(speed_satuan)-2);
-                        // }
-                        // float speed_koma_tmp = atof(speed_koma);
-                        // for(int i = 0; i<strlen(speed_koma); i++){
-                        //     speed_koma_tmp /= 10; 
-                        // }
+                        double speed_konversi = (atof(speed_satuan) + speed_koma_tmp) * 1.852;
 
-                        // double speed_konversi = (atof(speed_satuan) + speed_koma_tmp) * 1.852;
-                        // g_print("%lf Km/h, speedsatuan: %s, speedkoma: %s, token: %s\n", speed_konversi, speed_satuan, speed_koma, token);
-                        g_print("isi token: %s\n", token);
-
+                        g_print("Speed: %lf Km/h\n", speed_konversi);
 
                         break;
                     }
@@ -397,7 +411,6 @@ gpointer baca_serial(gpointer _data_){
                         char hari[10];
                         char bulan[10];
                         char tahun[10];
-                        char tahun_satuan[5] = "20";
 
                         memset(hari,0,sizeof(hari));
                         memset(bulan,0,sizeof(bulan));
@@ -405,21 +418,17 @@ gpointer baca_serial(gpointer _data_){
                         memcpy(hari,token,2);
                         memcpy(bulan,token+2,2);
                         memcpy(tahun,token+4,2);
-                        strcat(tahun_satuan,tahun);
 
-                        sprintf(date_gps,"%s-%s-%s", tahun_satuan, bulan, hari);
-                        g_print("datetime: %s %s\n", date_gps, time_gps);
+                        sprintf(date_gps,"%s-%s-%s", tahun, bulan, hari);
+                        g_print("datetime: 20%s %s\n", date_gps, time_gps);
                         break;
                     }
 
                     default:
                         break;
                     }
-
                     
-                    // printf( "- %s\n", token );
-                    
-                    token = strtok(NULL, ",");
+                    token = strtok(NULL, ",");              
                     if(token == NULL) break;
                 }
                 g_print("-------------------------------------\n");
