@@ -111,6 +111,7 @@ gpointer baca_serial(gpointer _data_){
     
     // status gps
     char state = 'V';
+    char status[30];
 
     
     // data konversi lat lon
@@ -213,8 +214,26 @@ gpointer baca_serial(gpointer _data_){
                             sprintf(time_gps, "%02i:%s:%s", atoi(jam)+7, menit, detik);
                             g_print("hasil susun waktu: %s\n", time_gps);
                             
-                            
                             // jangan lupa di break tiap case
+                            break;
+                        }
+                        
+                        case 3:{
+                            // Position status (A = data valid, V = data invalid)
+
+                            // state variable global   
+                            state = potong[0];
+                            if(state != 'V' && state != 'A'){
+                                state = 'V';
+                            }
+                            if(state == 'V'){
+                                break;
+                            }
+
+                            // coba cetak di terminal dan gui
+                            g_print("statusnya: %c\n", state);
+                            // gtk_label_set_text(GTK_LABEL(ui_widget.lbl.status),(gchar *)state);
+
                             break;
                         }
 
@@ -258,6 +277,7 @@ int main(int argc, char *argv[]){
     // konek object ke widget
     gtk_get_object_helper(&ui_widget.window,"main_window");
     gtk_get_object_helper(&ui_widget.lbl.fulldata,"label_raw");
+    gtk_get_object_helper(&ui_widget.lbl.status,"label_status");
     
     
 
