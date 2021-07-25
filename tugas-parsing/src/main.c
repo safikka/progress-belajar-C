@@ -6,7 +6,7 @@
 #include <glib.h>
 #include <pthread.h>
 
-struct label{
+struct rmc{
     GtkWidget   *fulldata;
     GtkWidget   *time;
     GtkWidget   *status;
@@ -15,9 +15,19 @@ struct label{
     GtkWidget   *speed;
 };
 
+struct gga{
+    GtkWidget   *fulldata;
+    GtkWidget   *quality;
+    GtkWidget   *numsat;
+    GtkWidget   *hdop;
+    GtkWidget   *altitude;
+    GtkWidget   *geoidal;
+};
+
 struct list_widget{
     GtkWidget   *window;
-    struct label lbl;
+    struct rmc rmc;
+    struct gga gga;
 } ui_widget;
 
 GtkBuilder  *builder;
@@ -87,6 +97,678 @@ gboolean gtk_get_object_helper(GtkWidget **_widget_ , gchar *_widget_name_,...){
 
 
 
+// ------------------------------> Fungsi Parsing <-------------------------------- //
+
+// date time
+char time_gps[14];
+char date_gps[30];    
+
+
+// status gps
+char state = 'V';
+
+
+// data konversi lat lon
+double konversi_lat = 0.0;
+double dir_lat = 0;
+double konversi_lon = 0.0;
+int dir_lon = 0;
+
+
+void parsing_rmc(unsigned char *buffer){
+
+    if(memcmp(buffer+3,"RMC",3) == 0){
+        if(ui_widget.rmc.fulldata){
+            gtk_label_set_text(GTK_LABEL(ui_widget.rmc.fulldata),(gchar *)buffer);
+        }
+
+
+        
+        /**
+         * @brief Mulai memparsing data GPRMC
+         * 
+         */
+
+        
+        // potong dulu data raw disetiap koma ","
+        char *potong;
+        potong = strtok((char *)buffer,",");
+        g_print("isi potong: %s\n", potong);
+
+
+        // tandai tiap potongan di koma nya
+        int8_t count_koma = 0;
+
+        while(potong != NULL){
+            
+            /**
+             * @brief
+             * brati pas tiap var potong ada isinya
+             * maka kasih tambah nilai di count_koma
+             * tiap ketemu koma
+             * 
+             * kenapa gitu? biar bisa nandain nih parameter
+             * yang mau di parsing apa aja di koma ke berapa
+             * gitu ges
+             * 
+             */
+
+            count_koma++;
+
+            // nah tinggal disesuain deh pas koma
+            // keberapa ini mau diparsing apa
+
+            switch(count_koma){
+                
+                // ini parameter ke-2, berati data
+                // waktu GMT
+                case 2:{
+                    
+                    //format dari docnya
+                    //hhmmss.ss
+
+                    // seperti biasa bikin dulu wadahnya
+                    char jam[3];
+                    char menit[3];
+                    char detik[6];
+                    memset(time_gps,0,sizeof(time_gps));
+                    memset(jam,0,sizeof(jam));
+                    memset(menit,0,sizeof(menit));
+                    memset(detik,0,sizeof(detik));
+
+                    
+                    /**
+                     * @brief
+                     * Copy data yang terpotong ke wadah
+                     * jangan lupa kalo mau Copy sesuaikan letak data
+                     * contoh: 144326.00
+                     * 
+                     * letak jam = potong (14)
+                     * letak menit = potong+2 karena nambah 2 digit (43)
+                     * letak detik = potong+4 karena nambah 4 digit (26) 
+                     * 
+                     */
+                    memcpy(jam, potong, 2);
+                    memcpy(menit, potong+2, 2);
+                    memcpy(detik, potong+4, 2);
+
+
+                    // data copy masukin ke var time_gps (global)
+                    // biar bisa dipake di lain case
+                    // di jam karena GMT, sehingga +7 sesuai WIB
+                    sprintf(time_gps, "%02i:%s:%s", atoi(jam)+7, menit, detik);
+                    g_print("hasil susun waktu: %s\n", time_gps);
+                    
+                    // jangan lupa di break tiap case
+                    break;
+                }
+                
+                case 3:{
+                    // Position status (A = data valid, V = data invalid)
+
+                    // state variable global   
+                    state = potong[0];
+                    
+                    char status[40];
+                    if(state != 'V' && state != 'A'){
+                        state = 'V';
+                        sprintf(status,"Status data:  %c -> Data Invalid",state);
+                    }
+                    else{
+                        sprintf(status,"Status data:  %c -> Data Valid",state);
+                    }
+                    
+                    // coba cetak di terminal dan gui
+
+                    gtk_label_set_text(GTK_LABEL(ui_widget.rmc.status),(gchar *)status);
+
+                    break;
+                }
+
+                case 4:{
+
+                    // saat void
+                    if(state == 'V'){
+                        break;
+                    }
+
+                    // Latitude (DDmm.mm)
+                    char lat[25];
+                    char derajat[3];
+                    char menit[3];
+                    char belakangkoma[5];
+
+                    memset(lat,0,sizeof(lat));
+                    memset(derajat,0,sizeof(derajat));
+                    memset(menit,0,sizeof(menit));
+                    memset(belakangkoma,0,sizeof(belakangkoma));
+                    
+                    memcpy(derajat, potong, 2);
+                    memcpy(menit, potong+2, 2);
+                    memcpy(belakangkoma, potong+5, 4);
+                    
+                    konversi_lat = atof(derajat) + (((atof(belakangkoma)/10000) + atof(menit))/60.0);
+
+                    break;
+                }
+
+                case 5:{
+
+                    // saat void
+                    if(state == 'V'){
+                        break;
+                    }
+                    
+                    char latdir[2];
+                    memset(latdir,0,sizeof(latdir));
+                    memcpy(latdir,potong,1);
+                    if(memcmp(latdir,"S",1) == 0){
+                        dir_lat = -1.0;
+                    }
+                    else if(memcmp(latdir,"N",1) == 0){
+                        dir_lat = 1.0;
+                    }
+
+                    double lat_fix = dir_lat * konversi_lat;
+                    char lattitude[20];
+                    sprintf(lattitude,"Lat : %lf", lat_fix);
+                    g_print("%s\n", lattitude);
+
+                    // Set di GUI
+                    gtk_label_set_text(GTK_LABEL(ui_widget.rmc.lat),lattitude);
+
+                    break;
+                }
+
+                case 6:{
+                
+                    // saat void
+                    if(state == 'V'){
+                        break;
+                    }
+                    
+                    // Longitude (DDDmm.mm)
+                    char lon[25];
+                    char derajat_lon[4];
+                    char menit_lon[3];
+                    char belakangkoma_lon[5];
+
+
+                    memset(lon,0,sizeof(lon));
+                    memset(derajat_lon,0,sizeof(derajat_lon));
+                    memset(menit_lon,0,sizeof(menit_lon));
+                    memset(belakangkoma_lon,0,sizeof(belakangkoma_lon));
+                    
+                    memcpy(derajat_lon, potong, 3);
+                    memcpy(menit_lon, potong+3, 2);
+                    memcpy(belakangkoma_lon, potong+6, 4);
+                    
+                    konversi_lon = atof(derajat_lon) + (((atof(belakangkoma_lon)/10000) + atof(menit_lon))/60.0);
+                    
+                    break;
+                }
+
+                case 7:{
+                
+                    // saat void
+                    if(state == 'V'){
+                        break;
+                    }
+                    
+                    char londir[2];
+                    memset(londir,0,sizeof(londir));
+                    memcpy(londir,potong,1);
+                    if(memcmp(londir,"W",1) == 0){
+                        dir_lon = -1.0;
+                    }
+                    else if(memcmp(londir,"E",1) == 0){
+                        dir_lon = 1.0;
+                    }
+
+                    double lon_fix = dir_lon * konversi_lon;
+                    char longitude[20];
+                    sprintf(longitude,"Lon : %lf", lon_fix);
+                    g_print("%s\n", longitude);
+
+                    // Set di GUI
+                    gtk_label_set_text(GTK_LABEL(ui_widget.rmc.longi),longitude);
+
+                    break;
+                }
+                
+                case 8:{
+
+                    // saat void
+                    if(state == 'V'){
+                        break;
+                    }
+
+                    // Konversi Speed Knot ke Km/h
+
+                    int len_speed = strlen(potong) + 1;
+                    char tmp[len_speed];
+                    memset(tmp,0,len_speed*sizeof(char));
+                    memcpy(tmp,potong,len_speed*sizeof(char));
+                    
+                    char speed_satuan[10];
+                    char speed_koma[10];
+                    memset(speed_satuan,0,sizeof(speed_satuan));
+                    memset(speed_koma,0,sizeof(speed_koma));
+
+                    int index = 0;
+                    gboolean isTitik = FALSE;
+
+                    // milah string yang ada "." nya
+                    for(int i=0;i<strlen(tmp);i++){
+                        if(tmp[i] == 0x2e){
+                            isTitik = TRUE;
+                            index= 0;
+                            continue;
+                        }
+                        if(isTitik == FALSE){
+                            speed_satuan[index] = tmp[i];
+                            index++;
+                        }
+                        else{
+                            speed_koma[index] = tmp[i];
+                            index++;
+                        }
+                    }
+
+                    // bagi si belakang koma
+                    double speed_koma_tmp = atof(speed_koma);
+                    for(int j=0; j<strlen(speed_koma); j++){
+                        speed_koma_tmp /= 10;
+                    }
+                    
+                    double speed_konversi = (atof(speed_satuan) + speed_koma_tmp) * 1.852;
+                    char speed_fix[30];
+                    sprintf(speed_fix,"Speed: %lf Km/h\n", speed_konversi);
+                    g_print("%s", speed_fix);
+
+                    // Set di GUI
+                    gtk_label_set_text(GTK_LABEL(ui_widget.rmc.speed),speed_fix);
+
+                    break;
+                }
+
+                case 10:{
+
+                    // Date parsing
+
+                    // saat void
+                    if(state == 'V'){
+                        break;
+                    }
+                    
+                    // char date_gps[30];
+                    char hari[10];
+                    char bulan[10];
+                    char tahun[10];
+
+                    memset(hari,0,sizeof(hari));
+                    memset(bulan,0,sizeof(bulan));
+                    memset(tahun,0,sizeof(tahun));
+                    memcpy(hari,potong,2);
+                    memcpy(bulan,potong+2,2);
+                    memcpy(tahun,potong+4,2);
+
+                    sprintf(date_gps,"%s-%s-%s", tahun, bulan, hari);
+                    char datetime_fix[100];
+                    sprintf(datetime_fix, "datetime: 20%s %s\n", date_gps, time_gps);
+
+                    g_print("%s", datetime_fix);
+
+                    // Set di GUI
+                    gtk_label_set_text(GTK_LABEL(ui_widget.rmc.time),datetime_fix);
+
+                    break;
+                }
+
+            }
+
+            // JANGAN LUPA DIKASIH BREAK CUYYY!!!
+            // PANIK ERROR NANGIS MAMPUS :(
+
+            potong = strtok(NULL, ",");              
+            if(potong == NULL) break;
+        }
+
+    }
+
+}
+
+
+void parsing_gga(unsigned char *buffer){
+
+    if(memcmp(buffer+3,"GGA",3) == 0){
+        if(ui_widget.rmc.fulldata){
+            gtk_label_set_text(GTK_LABEL(ui_widget.gga.fulldata),(gchar *)buffer);
+        }
+
+
+        
+        /**
+         * @brief Mulai memparsing data GPRMC
+         * 
+         */
+
+        
+        // potong dulu data raw disetiap koma ","
+        char *potong;
+        potong = strtok((char *)buffer,",");
+        g_print("isi potong: %s\n", potong);
+
+
+        // tandai tiap potongan di koma nya
+        int8_t count_koma = 0;
+
+        // while(potong != NULL){
+            
+        //     /**
+        //      * @brief
+        //      * brati pas tiap var potong ada isinya
+        //      * maka kasih tambah nilai di count_koma
+        //      * tiap ketemu koma
+        //      * 
+        //      * kenapa gitu? biar bisa nandain nih parameter
+        //      * yang mau di parsing apa aja di koma ke berapa
+        //      * gitu ges
+        //      * 
+        //      */
+
+        //     count_koma++;
+
+        //     // nah tinggal disesuain deh pas koma
+        //     // keberapa ini mau diparsing apa
+
+        //     switch(count_koma){
+                
+        //         // ini parameter ke-2, berati data
+        //         // waktu GMT
+        //         case 2:{
+                    
+        //             //format dari docnya
+        //             //hhmmss.ss
+
+        //             // seperti biasa bikin dulu wadahnya
+        //             char jam[3];
+        //             char menit[3];
+        //             char detik[6];
+        //             memset(time_gps,0,sizeof(time_gps));
+        //             memset(jam,0,sizeof(jam));
+        //             memset(menit,0,sizeof(menit));
+        //             memset(detik,0,sizeof(detik));
+
+                    
+        //             /**
+        //              * @brief
+        //              * Copy data yang terpotong ke wadah
+        //              * jangan lupa kalo mau Copy sesuaikan letak data
+        //              * contoh: 144326.00
+        //              * 
+        //              * letak jam = potong (14)
+        //              * letak menit = potong+2 karena nambah 2 digit (43)
+        //              * letak detik = potong+4 karena nambah 4 digit (26) 
+        //              * 
+        //              */
+        //             memcpy(jam, potong, 2);
+        //             memcpy(menit, potong+2, 2);
+        //             memcpy(detik, potong+4, 2);
+
+
+        //             // data copy masukin ke var time_gps (global)
+        //             // biar bisa dipake di lain case
+        //             // di jam karena GMT, sehingga +7 sesuai WIB
+        //             sprintf(time_gps, "%02i:%s:%s", atoi(jam)+7, menit, detik);
+        //             g_print("hasil susun waktu: %s\n", time_gps);
+                    
+        //             // jangan lupa di break tiap case
+        //             break;
+        //         }
+                
+        //         case 3:{
+        //             // Position status (A = data valid, V = data invalid)
+
+        //             // state variable global   
+        //             state = potong[0];
+                    
+        //             char status[40];
+        //             if(state != 'V' && state != 'A'){
+        //                 state = 'V';
+        //                 sprintf(status,"Status data:  %c -> Data Invalid",state);
+        //             }
+        //             else{
+        //                 sprintf(status,"Status data:  %c -> Data Valid",state);
+        //             }
+                    
+        //             // coba cetak di terminal dan gui
+
+        //             gtk_label_set_text(GTK_LABEL(ui_widget.rmc.status),(gchar *)status);
+
+        //             break;
+        //         }
+
+        //         case 4:{
+
+        //             // saat void
+        //             if(state == 'V'){
+        //                 break;
+        //             }
+
+        //             // Latitude (DDmm.mm)
+        //             char lat[25];
+        //             char derajat[3];
+        //             char menit[3];
+        //             char belakangkoma[5];
+
+        //             memset(lat,0,sizeof(lat));
+        //             memset(derajat,0,sizeof(derajat));
+        //             memset(menit,0,sizeof(menit));
+        //             memset(belakangkoma,0,sizeof(belakangkoma));
+                    
+        //             memcpy(derajat, potong, 2);
+        //             memcpy(menit, potong+2, 2);
+        //             memcpy(belakangkoma, potong+5, 4);
+                    
+        //             konversi_lat = atof(derajat) + (((atof(belakangkoma)/10000) + atof(menit))/60.0);
+
+        //             break;
+        //         }
+
+        //         case 5:{
+
+        //             // saat void
+        //             if(state == 'V'){
+        //                 break;
+        //             }
+                    
+        //             char latdir[2];
+        //             memset(latdir,0,sizeof(latdir));
+        //             memcpy(latdir,potong,1);
+        //             if(memcmp(latdir,"S",1) == 0){
+        //                 dir_lat = -1.0;
+        //             }
+        //             else if(memcmp(latdir,"N",1) == 0){
+        //                 dir_lat = 1.0;
+        //             }
+
+        //             double lat_fix = dir_lat * konversi_lat;
+        //             char lattitude[20];
+        //             sprintf(lattitude,"Lat : %lf", lat_fix);
+        //             g_print("%s\n", lattitude);
+
+        //             // Set di GUI
+        //             gtk_label_set_text(GTK_LABEL(ui_widget.rmc.lat),lattitude);
+
+        //             break;
+        //         }
+
+        //         case 6:{
+                
+        //             // saat void
+        //             if(state == 'V'){
+        //                 break;
+        //             }
+                    
+        //             // Longitude (DDDmm.mm)
+        //             char lon[25];
+        //             char derajat_lon[4];
+        //             char menit_lon[3];
+        //             char belakangkoma_lon[5];
+
+
+        //             memset(lon,0,sizeof(lon));
+        //             memset(derajat_lon,0,sizeof(derajat_lon));
+        //             memset(menit_lon,0,sizeof(menit_lon));
+        //             memset(belakangkoma_lon,0,sizeof(belakangkoma_lon));
+                    
+        //             memcpy(derajat_lon, potong, 3);
+        //             memcpy(menit_lon, potong+3, 2);
+        //             memcpy(belakangkoma_lon, potong+6, 4);
+                    
+        //             konversi_lon = atof(derajat_lon) + (((atof(belakangkoma_lon)/10000) + atof(menit_lon))/60.0);
+                    
+        //             break;
+        //         }
+
+        //         case 7:{
+                
+        //             // saat void
+        //             if(state == 'V'){
+        //                 break;
+        //             }
+                    
+        //             char londir[2];
+        //             memset(londir,0,sizeof(londir));
+        //             memcpy(londir,potong,1);
+        //             if(memcmp(londir,"W",1) == 0){
+        //                 dir_lon = -1.0;
+        //             }
+        //             else if(memcmp(londir,"E",1) == 0){
+        //                 dir_lon = 1.0;
+        //             }
+
+        //             double lon_fix = dir_lon * konversi_lon;
+        //             char longitude[20];
+        //             sprintf(longitude,"Lon : %lf", lon_fix);
+        //             g_print("%s\n", longitude);
+
+        //             // Set di GUI
+        //             gtk_label_set_text(GTK_LABEL(ui_widget.rmc.longi),longitude);
+
+        //             break;
+        //         }
+                
+        //         case 8:{
+
+        //             // saat void
+        //             if(state == 'V'){
+        //                 break;
+        //             }
+
+        //             // Konversi Speed Knot ke Km/h
+
+        //             int len_speed = strlen(potong) + 1;
+        //             char tmp[len_speed];
+        //             memset(tmp,0,len_speed*sizeof(char));
+        //             memcpy(tmp,potong,len_speed*sizeof(char));
+                    
+        //             char speed_satuan[10];
+        //             char speed_koma[10];
+        //             memset(speed_satuan,0,sizeof(speed_satuan));
+        //             memset(speed_koma,0,sizeof(speed_koma));
+
+        //             int index = 0;
+        //             gboolean isTitik = FALSE;
+
+        //             // milah string yang ada "." nya
+        //             for(int i=0;i<strlen(tmp);i++){
+        //                 if(tmp[i] == 0x2e){
+        //                     isTitik = TRUE;
+        //                     index= 0;
+        //                     continue;
+        //                 }
+        //                 if(isTitik == FALSE){
+        //                     speed_satuan[index] = tmp[i];
+        //                     index++;
+        //                 }
+        //                 else{
+        //                     speed_koma[index] = tmp[i];
+        //                     index++;
+        //                 }
+        //             }
+
+        //             // bagi si belakang koma
+        //             double speed_koma_tmp = atof(speed_koma);
+        //             for(int j=0; j<strlen(speed_koma); j++){
+        //                 speed_koma_tmp /= 10;
+        //             }
+                    
+        //             double speed_konversi = (atof(speed_satuan) + speed_koma_tmp) * 1.852;
+        //             char speed_fix[30];
+        //             sprintf(speed_fix,"Speed: %lf Km/h\n", speed_konversi);
+        //             g_print("%s", speed_fix);
+
+        //             // Set di GUI
+        //             gtk_label_set_text(GTK_LABEL(ui_widget.rmc.speed),speed_fix);
+
+        //             break;
+        //         }
+
+        //         case 10:{
+
+        //             // Date parsing
+
+        //             // saat void
+        //             if(state == 'V'){
+        //                 break;
+        //             }
+                    
+        //             // char date_gps[30];
+        //             char hari[10];
+        //             char bulan[10];
+        //             char tahun[10];
+
+        //             memset(hari,0,sizeof(hari));
+        //             memset(bulan,0,sizeof(bulan));
+        //             memset(tahun,0,sizeof(tahun));
+        //             memcpy(hari,potong,2);
+        //             memcpy(bulan,potong+2,2);
+        //             memcpy(tahun,potong+4,2);
+
+        //             sprintf(date_gps,"%s-%s-%s", tahun, bulan, hari);
+        //             char datetime_fix[100];
+        //             sprintf(datetime_fix, "datetime: 20%s %s\n", date_gps, time_gps);
+
+        //             g_print("%s", datetime_fix);
+
+        //             // Set di GUI
+        //             gtk_label_set_text(GTK_LABEL(ui_widget.rmc.time),datetime_fix);
+
+        //             break;
+        //         }
+
+        //     }
+
+        //     // JANGAN LUPA DIKASIH BREAK CUYYY!!!
+        //     // PANIK ERROR NANGIS MAMPUS :(
+
+        //     potong = strtok(NULL, ",");              
+        //     if(potong == NULL) break;
+        // }
+
+    }
+
+}
+
+
+// ------------------------------> Fungsi Parsing <-------------------------------- //
+
+
+
+
+
 // ------------------------------> Fungsi Serial <-------------------------------- //
 
 gpointer baca_serial(gpointer _data_){
@@ -101,24 +783,9 @@ gpointer baca_serial(gpointer _data_){
 
     
     // loading data
-    gtk_label_set_text(GTK_LABEL(ui_widget.lbl.fulldata),"loading..");
-
-    
-    // date time
-    char time_gps[14];
-    char date_gps[30];    
-
-    
-    // status gps
-    char state = 'V';
-
-    
-    // data konversi lat lon
-    double konversi_lat = 0.0;
-    double dir_lat = 0;
-    double konversi_lon = 0.0;
-    int dir_lon = 0;
-
+    gtk_label_set_text(GTK_LABEL(ui_widget.rmc.fulldata),"loading..");
+    gtk_label_set_text(GTK_LABEL(ui_widget.gga.fulldata),"loading..");
+  
     
     // init mutex
     g_mutex_init(&lock);
@@ -131,324 +798,10 @@ gpointer baca_serial(gpointer _data_){
 
             g_mutex_lock(&lock);
 
-            if(memcmp(wadah+3,"RMC",3) == 0){
-                if(ui_widget.lbl.fulldata){
-                    gtk_label_set_text(GTK_LABEL(ui_widget.lbl.fulldata),(gchar *)wadah);
-                }
-
-
-                
-                /**
-                 * @brief Mulai memparsing data GPRMC
-                 * 
-                 */
-
-                
-                // potong dulu data raw disetiap koma ","
-                char *potong;
-                potong = strtok((char *)wadah,",");
-                g_print("isi potong: %s\n", potong);
-
-
-                // tandai tiap potongan di koma nya
-                int8_t count_koma = 0;
-
-                while(potong != NULL){
-                    
-                    /**
-                     * @brief
-                     * brati pas tiap var potong ada isinya
-                     * maka kasih tambah nilai di count_koma
-                     * tiap ketemu koma
-                     * 
-                     * kenapa gitu? biar bisa nandain nih parameter
-                     * yang mau di parsing apa aja di koma ke berapa
-                     * gitu ges
-                     * 
-                     */
-
-                    count_koma++;
-
-                    // nah tinggal disesuain deh pas koma
-                    // keberapa ini mau diparsing apa
-
-                    switch(count_koma){
-                        
-                        // ini parameter ke-2, berati data
-                        // waktu GMT
-                        case 2:{
-                            
-                            //format dari docnya
-                            //hhmmss.ss
-
-                            // seperti biasa bikin dulu wadahnya
-                            char jam[3];
-                            char menit[3];
-                            char detik[6];
-                            memset(time_gps,0,sizeof(time_gps));
-                            memset(jam,0,sizeof(jam));
-                            memset(menit,0,sizeof(menit));
-                            memset(detik,0,sizeof(detik));
-
-                            
-                            /**
-                             * @brief
-                             * Copy data yang terpotong ke wadah
-                             * jangan lupa kalo mau Copy sesuaikan letak data
-                             * contoh: 144326.00
-                             * 
-                             * letak jam = potong (14)
-                             * letak menit = potong+2 karena nambah 2 digit (43)
-                             * letak detik = potong+4 karena nambah 4 digit (26) 
-                             * 
-                             */
-                            memcpy(jam, potong, 2);
-                            memcpy(menit, potong+2, 2);
-                            memcpy(detik, potong+4, 2);
-
-
-                            // data copy masukin ke var time_gps (global)
-                            // biar bisa dipake di lain case
-                            // di jam karena GMT, sehingga +7 sesuai WIB
-                            sprintf(time_gps, "%02i:%s:%s", atoi(jam)+7, menit, detik);
-                            g_print("hasil susun waktu: %s\n", time_gps);
-                            
-                            // jangan lupa di break tiap case
-                            break;
-                        }
-                        
-                        case 3:{
-                            // Position status (A = data valid, V = data invalid)
-
-                            // state variable global   
-                            state = potong[0];
-                            
-                            char status[40];
-                            if(state != 'V' && state != 'A'){
-                                state = 'V';
-                                sprintf(status,"Status data:  %c -> Data Invalid",state);
-                            }
-                            else{
-                                sprintf(status,"Status data:  %c -> Data Valid",state);
-                            }
-                            
-                            // coba cetak di terminal dan gui
-
-                            gtk_label_set_text(GTK_LABEL(ui_widget.lbl.status),(gchar *)status);
-
-                            break;
-                        }
-
-                        case 4:{
-
-                            // saat void
-                            if(state == 'V'){
-                                break;
-                            }
-
-                            // Latitude (DDmm.mm)
-                            char lat[25];
-                            char derajat[3];
-                            char menit[3];
-                            char belakangkoma[5];
-
-                            memset(lat,0,sizeof(lat));
-                            memset(derajat,0,sizeof(derajat));
-                            memset(menit,0,sizeof(menit));
-                            memset(belakangkoma,0,sizeof(belakangkoma));
-                            
-                            memcpy(derajat, potong, 2);
-                            memcpy(menit, potong+2, 2);
-                            memcpy(belakangkoma, potong+5, 4);
-                            
-                            konversi_lat = atof(derajat) + (((atof(belakangkoma)/10000) + atof(menit))/60.0);
-
-                            break;
-                        }
-
-                        case 5:{
-
-                            // saat void
-                            if(state == 'V'){
-                                break;
-                            }
-                            
-                            char latdir[2];
-                            memset(latdir,0,sizeof(latdir));
-                            memcpy(latdir,potong,1);
-                            if(memcmp(latdir,"S",1) == 0){
-                                dir_lat = -1.0;
-                            }
-                            else if(memcmp(latdir,"N",1) == 0){
-                                dir_lat = 1.0;
-                            }
-
-                            double lat_fix = dir_lat * konversi_lat;
-                            char lattitude[20];
-                            sprintf(lattitude,"Lat : %lf", lat_fix);
-                            g_print("%s\n", lattitude);
-
-                            // Set di GUI
-                            gtk_label_set_text(GTK_LABEL(ui_widget.lbl.lat),lattitude);
-
-                            break;
-                        }
-
-                        case 6:{
-                        
-                            // saat void
-                            if(state == 'V'){
-                                break;
-                            }
-                            
-                            // Longitude (DDDmm.mm)
-                            char lon[25];
-                            char derajat_lon[4];
-                            char menit_lon[3];
-                            char belakangkoma_lon[5];
-
-
-                            memset(lon,0,sizeof(lon));
-                            memset(derajat_lon,0,sizeof(derajat_lon));
-                            memset(menit_lon,0,sizeof(menit_lon));
-                            memset(belakangkoma_lon,0,sizeof(belakangkoma_lon));
-                            
-                            memcpy(derajat_lon, potong, 3);
-                            memcpy(menit_lon, potong+3, 2);
-                            memcpy(belakangkoma_lon, potong+6, 4);
-                            
-                            konversi_lon = atof(derajat_lon) + (((atof(belakangkoma_lon)/10000) + atof(menit_lon))/60.0);
-                            
-                            break;
-                        }
-
-                        case 7:{
-                        
-                            // saat void
-                            if(state == 'V'){
-                                break;
-                            }
-                            
-                            char londir[2];
-                            memset(londir,0,sizeof(londir));
-                            memcpy(londir,potong,1);
-                            if(memcmp(londir,"W",1) == 0){
-                                dir_lon = -1.0;
-                            }
-                            else if(memcmp(londir,"E",1) == 0){
-                                dir_lon = 1.0;
-                            }
-
-                            double lon_fix = dir_lon * konversi_lon;
-                            char longitude[20];
-                            sprintf(longitude,"Lon : %lf", lon_fix);
-                            g_print("%s\n", longitude);
-
-                            // Set di GUI
-                            gtk_label_set_text(GTK_LABEL(ui_widget.lbl.longi),longitude);
-
-                            break;
-                        }
-                        
-                        case 8:{
-
-                            // saat void
-                            if(state == 'V'){
-                                break;
-                            }
-
-                            // Konversi Speed Knot ke Km/h
-
-                            int len_speed = strlen(potong) + 1;
-                            char tmp[len_speed];
-                            memset(tmp,0,len_speed*sizeof(char));
-                            memcpy(tmp,potong,len_speed*sizeof(char));
-                            
-                            char speed_satuan[10];
-                            char speed_koma[10];
-                            memset(speed_satuan,0,sizeof(speed_satuan));
-                            memset(speed_koma,0,sizeof(speed_koma));
-
-                            int index = 0;
-                            gboolean isTitik = FALSE;
-
-                            // milah string yang ada "." nya
-                            for(int i=0;i<strlen(tmp);i++){
-                                if(tmp[i] == 0x2e){
-                                    isTitik = TRUE;
-                                    index= 0;
-                                    continue;
-                                }
-                                if(isTitik == FALSE){
-                                    speed_satuan[index] = tmp[i];
-                                    index++;
-                                }
-                                else{
-                                    speed_koma[index] = tmp[i];
-                                    index++;
-                                }
-                            }
-
-                            // bagi si belakang koma
-                            double speed_koma_tmp = atof(speed_koma);
-                            for(int j=0; j<strlen(speed_koma); j++){
-                                speed_koma_tmp /= 10;
-                            }
-                            
-                            double speed_konversi = (atof(speed_satuan) + speed_koma_tmp) * 1.852;
-                            char speed_fix[30];
-                            sprintf(speed_fix,"Speed: %lf Km/h\n", speed_konversi);
-                            g_print("%s", speed_fix);
-
-                            // Set di GUI
-                            gtk_label_set_text(GTK_LABEL(ui_widget.lbl.speed),speed_fix);
-
-                            break;
-                        }
-
-                        case 10:{
-
-                            // Date parsing
-
-                            // saat void
-                            if(state == 'V'){
-                                break;
-                            }
-                            
-                            // char date_gps[30];
-                            char hari[10];
-                            char bulan[10];
-                            char tahun[10];
-
-                            memset(hari,0,sizeof(hari));
-                            memset(bulan,0,sizeof(bulan));
-                            memset(tahun,0,sizeof(tahun));
-                            memcpy(hari,potong,2);
-                            memcpy(bulan,potong+2,2);
-                            memcpy(tahun,potong+4,2);
-
-                            sprintf(date_gps,"%s-%s-%s", tahun, bulan, hari);
-                            char datetime_fix[100];
-                            sprintf(datetime_fix, "datetime: 20%s %s\n", date_gps, time_gps);
-
-                            g_print("%s", datetime_fix);
-
-                            // Set di GUI
-                            gtk_label_set_text(GTK_LABEL(ui_widget.lbl.time),datetime_fix);
-
-                            break;
-                        }
-
-                    }
-
-                    // JANGAN LUPA DIKASIH BREAK CUYYY!!!
-                    // PANIK ERROR NANGIS MAMPUS :(
-
-                    potong = strtok(NULL, ",");              
-                    if(potong == NULL) break;
-                }
-
-            }
+            // Jalanin fungsi parsing RMC
+            parsing_rmc(wadah);
+            parsing_gga(wadah);
+         
 
             free(wadah);
 			wadah = NULL;
@@ -478,12 +831,17 @@ int main(int argc, char *argv[]){
 
     // konek object ke widget
     gtk_get_object_helper(&ui_widget.window,"main_window");
-    gtk_get_object_helper(&ui_widget.lbl.fulldata,"label_raw");
-    gtk_get_object_helper(&ui_widget.lbl.status,"label_status");
-    gtk_get_object_helper(&ui_widget.lbl.lat,"label_lat");
-    gtk_get_object_helper(&ui_widget.lbl.longi,"label_lon");
-    gtk_get_object_helper(&ui_widget.lbl.speed,"label_speed");
-    gtk_get_object_helper(&ui_widget.lbl.time,"label_datetime");
+
+    // object RMC
+    gtk_get_object_helper(&ui_widget.rmc.fulldata,"label_raw");
+    gtk_get_object_helper(&ui_widget.rmc.status,"label_status");
+    gtk_get_object_helper(&ui_widget.rmc.lat,"label_lat");
+    gtk_get_object_helper(&ui_widget.rmc.longi,"label_lon");
+    gtk_get_object_helper(&ui_widget.rmc.speed,"label_speed");
+    gtk_get_object_helper(&ui_widget.rmc.time,"label_datetime");
+
+    // object GGA
+    gtk_get_object_helper(&ui_widget.gga.fulldata,"label_gga_raw");
     
     
 
