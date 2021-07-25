@@ -284,10 +284,12 @@ gpointer baca_serial(gpointer _data_){
                             }
 
                             double lat_fix = dir_lat * konversi_lat;
-                            g_print("lat: %lf\n", lat_fix);
+                            char lattitude[20];
+                            sprintf(lattitude,"Lat : %lf", lat_fix);
+                            g_print("%s\n", lattitude);
 
                             // Set di GUI
-                            // gtk_label_set_text(GTK_LABEL(ui_widget.lbl.status),(gchar *)lat_fix);
+                            gtk_label_set_text(GTK_LABEL(ui_widget.lbl.lat),lattitude);
 
                             break;
                         }
@@ -317,10 +319,6 @@ gpointer baca_serial(gpointer _data_){
                             
                             konversi_lon = atof(derajat_lon) + (((atof(belakangkoma_lon)/10000) + atof(menit_lon))/60.0);
                             
-                            // g_print("derajat: %s, ukuran: %li\n", derajat_lon, sizeof(derajat_lon));
-                            // g_print("menit: %s\n", menit_lon);
-                            // g_print("belakangkoma: %s\n", belakangkoma_lon);
-                            // g_print("lon: %2lf\n", konversi_lon);
                             break;
                         }
 
@@ -342,7 +340,12 @@ gpointer baca_serial(gpointer _data_){
                             }
 
                             double lon_fix = dir_lon * konversi_lon;
-                            g_print("lon: %lf\n", lon_fix);
+                            char longitude[20];
+                            sprintf(longitude,"Lon : %lf", lon_fix);
+                            g_print("%s\n", longitude);
+
+                            // Set di GUI
+                            gtk_label_set_text(GTK_LABEL(ui_widget.lbl.longi),longitude);
 
                             break;
                         }
@@ -393,8 +396,12 @@ gpointer baca_serial(gpointer _data_){
                             }
                             
                             double speed_konversi = (atof(speed_satuan) + speed_koma_tmp) * 1.852;
+                            char speed_fix[30];
+                            sprintf(speed_fix,"Speed: %lf Km/h\n", speed_konversi);
+                            g_print("%s", speed_fix);
 
-                            g_print("Speed: %lf Km/h\n", speed_konversi);
+                            // Set di GUI
+                            gtk_label_set_text(GTK_LABEL(ui_widget.lbl.speed),speed_fix);
 
                             break;
                         }
@@ -421,7 +428,14 @@ gpointer baca_serial(gpointer _data_){
                             memcpy(tahun,potong+4,2);
 
                             sprintf(date_gps,"%s-%s-%s", tahun, bulan, hari);
-                            g_print("datetime: 20%s %s\n", date_gps, time_gps);
+                            char datetime_fix[100];
+                            sprintf(datetime_fix, "datetime: 20%s %s\n", date_gps, time_gps);
+
+                            g_print("%s", datetime_fix);
+
+                            // Set di GUI
+                            gtk_label_set_text(GTK_LABEL(ui_widget.lbl.time),datetime_fix);
+
                             break;
                         }
 
@@ -466,6 +480,10 @@ int main(int argc, char *argv[]){
     gtk_get_object_helper(&ui_widget.window,"main_window");
     gtk_get_object_helper(&ui_widget.lbl.fulldata,"label_raw");
     gtk_get_object_helper(&ui_widget.lbl.status,"label_status");
+    gtk_get_object_helper(&ui_widget.lbl.lat,"label_lat");
+    gtk_get_object_helper(&ui_widget.lbl.longi,"label_lon");
+    gtk_get_object_helper(&ui_widget.lbl.speed,"label_speed");
+    gtk_get_object_helper(&ui_widget.lbl.time,"label_datetime");
     
     
 

@@ -41,7 +41,7 @@
                     <property name="can_focus">False</property>
                     <property name="orientation">vertical</property>
                     <child>
-                      <object class="GtkLabel" id="label_status">
+                      <object class="GtkLabel" id="label_datetime">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">label</property>
@@ -53,7 +53,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label_lat">
+                      <object class="GtkLabel" id="label_status">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">label</property>
@@ -65,7 +65,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label_lon">
+                      <object class="GtkLabel" id="label_lat">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">label</property>
@@ -77,7 +77,7 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="label_datetime">
+                      <object class="GtkLabel" id="label_lon">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">label</property>
