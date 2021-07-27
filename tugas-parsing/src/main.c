@@ -1,6 +1,9 @@
 // header Serial
 #include "shiki-uart-tools.h"
 
+// header DB
+#include "log.h"
+
 // header GTK
 #include <gtk/gtk.h>
 #include <glib.h>
@@ -109,26 +112,30 @@ gboolean gtk_get_object_helper(GtkWidget **_widget_ , gchar *_widget_name_,...){
 
 // ------------------------------> Fungsi Parsing <-------------------------------- //
 
-
 // date time
 char time_gps[14];
-char date_gps[30];    
-
+char date_gps[30];
+char datetime_fix[100];    
 
 // status gps
 char state = 'V';
 
-
 // data konversi lat lon
 double konversi_lat = 0.0;
 double dir_lat = 0;
+double lattitude_fix = 0.0;
 double konversi_lon = 0.0;
 int dir_lon = 0;
+double longitude_fix = 0.0;
+
+// data speed
+double speed_rmc = 0.0;
 
 
 void parsing_rmc(unsigned char *buffer){
 
     if(memcmp(buffer+3,"RMC",3) == 0){
+
         if(ui_widget.rmc.fulldata){
             gtk_label_set_text(GTK_LABEL(ui_widget.rmc.fulldata),(gchar *)buffer);
         }
@@ -141,6 +148,10 @@ void parsing_rmc(unsigned char *buffer){
          */
 
         
+        struct log_data_t data_rmc;
+        memset(&data_rmc,0,sizeof(struct log_data_t));
+
+
         // potong dulu data raw disetiap koma ","
         char *potong;
         potong = strtok((char *)buffer,",");
@@ -162,8 +173,9 @@ void parsing_rmc(unsigned char *buffer){
              * gitu ges
              * 
              */
-
+            
             count_koma++;
+            // g_print("%i\n", count_koma);
 
             // nah tinggal disesuain deh pas koma
             // keberapa ini mau diparsing apa
@@ -217,20 +229,21 @@ void parsing_rmc(unsigned char *buffer){
                     // Position status (A = data valid, V = data invalid)
 
                     // state variable global   
-                    state = potong[0];
+                    data_rmc.status = potong[0];
                     
                     char status[40];
-                    if(state != 'V' && state != 'A'){
-                        state = 'V';
-                        sprintf(status,"Status data:  %c -> Data Invalid",state);
+                    if(data_rmc.status != 'V' && data_rmc.status != 'A'){
+                        data_rmc.status = 'V';
+                        sprintf(status,"Status data:  %c -> Data Invalid",data_rmc.status);
                     }
                     else{
-                        sprintf(status,"Status data:  %c -> Data Valid",state);
+                        sprintf(status,"Status data:  %c -> Data Valid",data_rmc.status);
                     }
                     
                     // coba cetak di terminal dan gui
 
                     gtk_label_set_text(GTK_LABEL(ui_widget.rmc.status),(gchar *)status);
+
 
                     break;
                 }
@@ -238,7 +251,7 @@ void parsing_rmc(unsigned char *buffer){
                 case 4:{
 
                     // saat void
-                    if(state == 'V'){
+                    if(data_rmc.status == 'V'){
                         break;
                     }
 
@@ -265,7 +278,7 @@ void parsing_rmc(unsigned char *buffer){
                 case 5:{
 
                     // saat void
-                    if(state == 'V'){
+                    if(data_rmc.status == 'V'){
                         break;
                     }
                     
@@ -279,9 +292,10 @@ void parsing_rmc(unsigned char *buffer){
                         dir_lat = 1.0;
                     }
 
-                    double lat_fix = dir_lat * konversi_lat;
+                    data_rmc.lat = dir_lat * konversi_lat;
+
                     char lattitude[20];
-                    sprintf(lattitude,"Lat : %lf", lat_fix);
+                    sprintf(lattitude,"Lat : %lf", data_rmc.lat);
                     // g_print("%s\n", lattitude);
 
                     // Set di GUI
@@ -293,7 +307,7 @@ void parsing_rmc(unsigned char *buffer){
                 case 6:{
                 
                     // saat void
-                    if(state == 'V'){
+                    if(data_rmc.status == 'V'){
                         break;
                     }
                     
@@ -321,7 +335,7 @@ void parsing_rmc(unsigned char *buffer){
                 case 7:{
                 
                     // saat void
-                    if(state == 'V'){
+                    if(data_rmc.status == 'V'){
                         break;
                     }
                     
@@ -335,9 +349,10 @@ void parsing_rmc(unsigned char *buffer){
                         dir_lon = 1.0;
                     }
 
-                    double lon_fix = dir_lon * konversi_lon;
+                    data_rmc.lon = dir_lon * konversi_lon;
+                    
                     char longitude[20];
-                    sprintf(longitude,"Lon : %lf", lon_fix);
+                    sprintf(longitude,"Lon : %lf", data_rmc.lon);
                     // g_print("%s\n", longitude);
 
                     // Set di GUI
@@ -349,7 +364,7 @@ void parsing_rmc(unsigned char *buffer){
                 case 8:{
 
                     // saat void
-                    if(state == 'V'){
+                    if(data_rmc.status == 'V'){
                         break;
                     }
 
@@ -391,9 +406,10 @@ void parsing_rmc(unsigned char *buffer){
                         speed_koma_tmp /= 10;
                     }
                     
-                    double speed_konversi = (atof(speed_satuan) + speed_koma_tmp) * 1.852;
+                    data_rmc.speed = (atof(speed_satuan) + speed_koma_tmp) * 1.852;
+                    
                     char speed_fix[30];
-                    sprintf(speed_fix,"Speed: %lf Km/h\n", speed_konversi);
+                    sprintf(speed_fix,"Speed: %lf Km/h\n", data_rmc.speed);
                     // g_print("%s", speed_fix);
 
                     // Set di GUI
@@ -407,7 +423,7 @@ void parsing_rmc(unsigned char *buffer){
                     // Date parsing
 
                     // saat void
-                    if(state == 'V'){
+                    if(data_rmc.status == 'V'){
                         break;
                     }
                     
@@ -424,10 +440,11 @@ void parsing_rmc(unsigned char *buffer){
                     memcpy(tahun,potong+4,2);
 
                     sprintf(date_gps,"%s-%s-%s", tahun, bulan, hari);
-                    char datetime_fix[100];
-                    sprintf(datetime_fix, "datetime: 20%s %s\n", date_gps, time_gps);
+                    sprintf(data_rmc.datetime, "20%s %s", date_gps, time_gps);
+                    sprintf(datetime_fix, "datetime: %s\n", data_rmc.datetime);
 
-                    // g_print("%s", datetime_fix);
+
+                    g_print("%s", datetime_fix);
 
                     // Set di GUI
                     gtk_label_set_text(GTK_LABEL(ui_widget.rmc.time),datetime_fix);
@@ -438,9 +455,15 @@ void parsing_rmc(unsigned char *buffer){
 
             // JANGAN LUPA DIKASIH BREAK CUYYY!!!
             // PANIK ERROR NANGIS MAMPUS :(
+            
+            // BIAR TIDAK FREEZE
+            while(gtk_events_pending()) gtk_main_iteration();
 
             potong = strtok(NULL, ",");              
-            if(potong == NULL) break;
+            if(potong == NULL){
+                simpan_db(&data_rmc);
+                break;
+            }
         }
 
     }
@@ -581,6 +604,9 @@ void parsing_gga(unsigned char *buffer){
             
             // JANGAN LUPA DIKASIH BREAK CUYYY!!!
             // PANIK ERROR NANGIS MAMPUS :(
+            
+            // BIAR TIDAK FREEZE
+            while(gtk_events_pending()) gtk_main_iteration();
 
             potong = strtok(NULL, ",");              
             if(potong == NULL) break;
@@ -607,90 +633,32 @@ void parsing_gsa(unsigned char *buffer){
         //  * @brief Mulai memparsing data GPGGA
         //  * 
         //  */
-
         
-        // // potong dulu data raw disetiap koma ","
-        char *potong;
-        potong = strtok((char *)buffer,",");
+        gboolean isKoma = FALSE;
+        int index = 0;
 
-        // tandai tiap potongan di koma nya
-        int8_t count_koma = 0;
+        int count_koma = 0;
+        int len_buffer = strlen((char *)buffer);
+        char tmp[len_buffer];
+        memset(tmp,0,len_buffer*sizeof(char));
+        memcpy(tmp,buffer,len_buffer*sizeof(char));
 
-        while(potong != NULL){
-            
-            /**
-             * @brief
-             * brati pas tiap var potong ada isinya
-             * maka kasih tambah nilai di count_koma
-             * tiap ketemu koma
-             * 
-             * kenapa gitu? biar bisa nandain nih parameter
-             * yang mau di parsing apa aja di koma ke berapa
-             * gitu ges
-             * 
-             */
-
-            count_koma++;
-
-            // nah tinggal disesuain deh pas koma
-            // keberapa ini mau diparsing apa
-
-            switch(count_koma){
-                
-                case 2:{
-                
-
-
-                    g_print("case 2: %s\n", potong);
-                    
-                    break;
-                }
-
-                case 3:{
-                
-
-
-                    g_print("case 3: %s\n", potong);
-                    
-                    break;
-                }
-                
-                case 4:{
-                
-
-
-                    g_print("case 4: %s\n", potong);
-                    
-                    break;
-                }
-
-                // case 17:{
-                
-
-
-                //     g_print("case 17: %s\n", potong);
-                    
-                //     break;
-                // }
-
-                // case 18:{
-                
-
-
-                //     g_print("case 18: %s\n", potong);
-                    
-                //     break;
-                // }
-
-
-            }
-            
-            // JANGAN LUPA DIKASIH BREAK CUYYY!!!
-            // PANIK ERROR NANGIS MAMPUS :(
-
-            potong = strtok(NULL, ",");              
-            if(potong == NULL) break;
+        char tes[10];
+        
+        for(int i=0; i<len_buffer; i++){
+           if(tmp[i] == 0x2C){
+                isKoma = TRUE;
+                index = 0;
+                continue;
+           }
+           if(isKoma == FALSE){
+               tes[index] = tmp[i];
+               index++;
+           }
         }
+
+        // g_print("tes %s\n", tmp);
+        g_print("total koma: %i\n", count_koma);
 
     }
     
@@ -735,7 +703,7 @@ gpointer baca_serial(gpointer _data_){
             // Jalanin fungsi parsing RMC
             parsing_rmc(wadah);
             parsing_gga(wadah);
-            parsing_gsa(wadah);
+            // parsing_gsa(wadah);
 
             free(wadah);
 			wadah = NULL;

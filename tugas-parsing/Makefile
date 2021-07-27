@@ -24,10 +24,13 @@ LIB_PKG_CONFIG = `pkg-config --cflags --libs gtk+-3.0 glib-2.0`
 # sudo apt install libpq5=12.7-0ubuntu0.20.04.1
 # lalu install libpq-dev
 INCLUDE = $(LIB_PKG_CONFIG) \
-          -lpthread
+          -lpthread \
+		  -lsqlite3
 
 SOURCE   = 	src/main.c \
-			src/shiki-uart-tools.c
+			src/shiki-uart-tools.c \
+			src/enco-tools-debug.c \
+			src/log.c
 
 TARGET             = parsing
 CC                 = gcc
