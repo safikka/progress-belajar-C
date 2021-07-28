@@ -9,7 +9,7 @@
 #include <glib.h>
 #include <pthread.h>
 
-struct rmc{
+struct data_rmc{
     GtkWidget   *fulldata;
     GtkWidget   *time;
     GtkWidget   *status;
@@ -18,7 +18,7 @@ struct rmc{
     GtkWidget   *speed;
 };
 
-struct gga{
+struct data_gga{
     GtkWidget   *fulldata;
     GtkWidget   *quality;
     GtkWidget   *numsat;
@@ -27,7 +27,7 @@ struct gga{
     GtkWidget   *geoidal;
 };
 
-struct gsa{
+struct data_gsa{
     GtkWidget   *fulldata;
     GtkWidget   *mode1;
     GtkWidget   *mode2;
@@ -36,11 +36,23 @@ struct gsa{
     GtkWidget   *vdop;
 };
 
+struct sidebar{
+    GtkWidget   *main_notebook;
+    GtkWidget   *box_rmc;
+    GtkWidget   *label_rmc;
+    GtkWidget   *label_gga;
+    GtkWidget   *label_gsa;
+    GtkWidget   *label_gsv;
+    GtkWidget   *box_parsing_rmc;
+};
+
+
 struct list_widget{
     GtkWidget   *window;
-    struct rmc rmc;
-    struct gga gga;
-    struct gsa gsa;
+    struct data_rmc rmc;
+    struct data_gga gga;
+    struct data_gsa gsa;
+    struct sidebar menu;
 } ui_widget;
 
 GtkBuilder  *builder;
@@ -58,6 +70,15 @@ void ui_init_css(){
 
     // set id untuk di css
     gtk_widget_set_name(ui_widget.window, "window-main");
+    gtk_widget_set_name(ui_widget.menu.main_notebook, "main_notebook");
+    gtk_widget_set_name(ui_widget.menu.box_rmc, "box_rmc");
+    gtk_widget_set_name(ui_widget.menu.label_rmc, "label_sidebar");
+    gtk_widget_set_name(ui_widget.menu.label_gsa, "label_sidebar");
+    gtk_widget_set_name(ui_widget.menu.label_gga, "label_sidebar");
+    gtk_widget_set_name(ui_widget.menu.label_gsv, "label_sidebar");
+    gtk_widget_set_name(ui_widget.rmc.fulldata, "label_raw");
+    gtk_widget_set_name(ui_widget.gga.fulldata, "label_raw");
+    gtk_widget_set_name(ui_widget.gsa.fulldata, "label_raw");
     
 
     gtk_style_context_add_provider_for_screen(  gdk_screen_get_default(), 
@@ -733,6 +754,12 @@ int main(int argc, char *argv[]){
 
     // konek object ke widget
     gtk_get_object_helper(&ui_widget.window,"main_window");
+    gtk_get_object_helper(&ui_widget.menu.label_rmc,"label_rmc");
+    gtk_get_object_helper(&ui_widget.menu.label_gga,"label_gga");
+    gtk_get_object_helper(&ui_widget.menu.label_gsv,"label_gsv");
+    gtk_get_object_helper(&ui_widget.menu.label_gsa,"label_gsa");
+    gtk_get_object_helper(&ui_widget.menu.box_rmc,"box_rmc");
+    
 
     // object RMC
     gtk_get_object_helper(&ui_widget.rmc.fulldata,"label_raw");
