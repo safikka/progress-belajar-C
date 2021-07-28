@@ -2,10 +2,10 @@
     background-color: #1f1b24;
 } */
 
-/* #main_notebook {
+#main_notebook {
     padding: 50px;
-    background-color: red;
-} */
+    background-color: #121212;
+}
 
 #label_sidebar{
     padding: 10px 50px;
@@ -15,10 +15,12 @@
 }
 
 #box_rmc{
-    background-color: sandybrown;
-    color: black;
+	
 }
 
-#label_fulldata{
-    color: black;
+#label_raw{
+    	margin: 10px;
+	background-color: #1f1b24;
+	border-radius: 10px;
+	color: white;	
 }
