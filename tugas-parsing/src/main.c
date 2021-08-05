@@ -8,6 +8,8 @@
 #include <gtk/gtk.h>
 #include <glib.h>
 #include <pthread.h>
+#include <stdlib.h>
+
 
 struct data_rmc{
     GtkWidget   *fulldata;
