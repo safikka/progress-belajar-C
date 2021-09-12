@@ -2,9 +2,54 @@
 #include <gtk/gtk.h>
 #include "ui.h"
 
+#define CSS_FILE "asset/ui.css"
+#define GLADE_FILE "asset/ui.glade"
+
 list_widget ui_widget;
 GtkBuilder  *builder;
 GMutex lock;
+
+
+
+
+void ui_connect_css(){
+    GtkCssProvider *css_nya;
+    css_nya = gtk_css_provider_new();
+    gtk_css_provider_load_from_path(css_nya,CSS_FILE,NULL);
+
+    // set id untuk di css
+    gtk_widget_set_name(ui_widget.main_window, "main_window");
+    
+    
+    // HEADER
+    // set id css untuk header
+    gtk_widget_set_name(ui_widget.header.box_header2, "box_header2");
+    gtk_widget_set_name(ui_widget.header.label_judul2, "label_judul2");
+    gtk_widget_set_name(ui_widget.header.logo_atas, "logo_atas");
+    gtk_widget_set_name(ui_widget.header.raw_box, "raw_box");
+    
+    
+    // PARSING
+    // set id css untuk data parsing
+    gtk_widget_set_name(ui_widget.footer.label_data_1, "label_data");
+    gtk_widget_set_name(ui_widget.footer.label_data_2, "label_data");
+    // set id css untuk font parsingan
+    gtk_widget_set_name(ui_widget.data_bawah.altitude, "label_value_parsing");
+    gtk_widget_set_name(ui_widget.data_bawah.datetime, "label_value_parsing");
+    gtk_widget_set_name(ui_widget.data_bawah.hdop, "label_value_parsing");
+    gtk_widget_set_name(ui_widget.data_bawah.lat, "label_value_parsing");
+    gtk_widget_set_name(ui_widget.data_bawah.lon, "label_value_parsing");
+    gtk_widget_set_name(ui_widget.data_bawah.numsat, "label_value_parsing");
+    gtk_widget_set_name(ui_widget.data_bawah.speed, "label_value_parsing");
+    gtk_widget_set_name(ui_widget.data_bawah.status, "label_value_parsing");
+   
+    
+    gtk_style_context_add_provider_for_screen(  gdk_screen_get_default(), 
+                                                GTK_STYLE_PROVIDER(css_nya),
+                                                GTK_STYLE_PROVIDER_PRIORITY_USER    );
+}
+
+
 
 
 /**
@@ -41,7 +86,7 @@ static gboolean gtk_get_object_helper(GtkWidget **_widget_ , gchar *_widget_name
  */
 void get_object(){
 
-    builder = gtk_builder_new_from_file("asset/ui.glade");
+    builder = gtk_builder_new_from_file(GLADE_FILE);
 
     
     
@@ -49,14 +94,27 @@ void get_object(){
     gtk_get_object_helper(&ui_widget.main_window,"main_window");
     
     
-    // object atas raw
+    // object atas
+    gtk_get_object_helper(&ui_widget.header.box_atas,"box_atas");
+    gtk_get_object_helper(&ui_widget.header.box_header2,"box_header2");
+    gtk_get_object_helper(&ui_widget.header.logo_atas,"logo_atas");
+    gtk_get_object_helper(&ui_widget.header.label_judul2,"label_judul2");
+    gtk_get_object_helper(&ui_widget.header.raw_box,"raw_box");
+    
+    // object bawah
+    gtk_get_object_helper(&ui_widget.footer.parsing_box,"parsing_box");
+    gtk_get_object_helper(&ui_widget.footer.label_data_1,"label_data_1");
+    gtk_get_object_helper(&ui_widget.footer.label_data_2,"label_data_2");
+
+
+    // object atas data
     gtk_get_object_helper(&ui_widget.data_atas.rmc,"label_raw_rmc");
     gtk_get_object_helper(&ui_widget.data_atas.gsa,"label_raw_gsa");
     gtk_get_object_helper(&ui_widget.data_atas.gga,"label_raw_gga");
     gtk_get_object_helper(&ui_widget.data_atas.gsv,"label_raw_gsv");
     
     
-    // object bawah
+    // object bawah data
     gtk_get_object_helper(&ui_widget.data_bawah.datetime,"label_isi_datetime");
     gtk_get_object_helper(&ui_widget.data_bawah.status,"label_isi_status");
     gtk_get_object_helper(&ui_widget.data_bawah.lat,"label_isi_lat");

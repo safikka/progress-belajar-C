@@ -6,8 +6,9 @@
 // bikin thread
 void *tesThread(void *gatau){
 	while(1){
-		long * tes = gatau;
-		printf("Kelipatan 2 %ld\n", *tes);
+		char *tes;
+		tes = (char *) gatau;
+		printf("Kelipatan 2 %s\n", tes);
 		sleep(2);
 	}
 	return NULL;
@@ -34,7 +35,8 @@ void *tes3Thread(void *gatau){
 
 int main(void){
 	pthread_t trit1, trit2, trit3;
-	pthread_create(&trit1, NULL, tesThread, (void *) &trit1);
+	char* tes = "tes";
+	pthread_create(&trit1, NULL, tesThread, (void *) tes);
 	pthread_create(&trit2, NULL, tes2Thread, (void *) &trit2);
 	pthread_create(&trit3, NULL, tes3Thread, (void *) &trit3);
 	pthread_join(trit1, NULL);

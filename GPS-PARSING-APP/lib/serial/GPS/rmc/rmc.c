@@ -16,7 +16,6 @@ void parsing_rmc(unsigned char *buffer){
             update_text(ui_widget.data_atas.rmc,(gchar *)buffer);
         }
 
-
         struct log_data_t data_rmc;
         memset(&data_rmc,0,sizeof(struct log_data_t));
 
@@ -40,7 +39,6 @@ void parsing_rmc(unsigned char *buffer){
 
         while(potong != NULL){
             
-            g_print("%s\n", potong);
             /**
              * @brief
              * brati pas tiap var potong ada isinya

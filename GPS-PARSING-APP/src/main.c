@@ -34,6 +34,7 @@ int main(int argc, char *argv[]){
      * 
      */
     get_object();
+    ui_connect_css();
 
 
     /**

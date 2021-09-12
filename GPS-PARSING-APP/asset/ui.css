@@ -1,0 +1,23 @@
+#main_window{
+    background-color: white;
+}
+
+#box_header2{
+    background-color: #8E0000;
+    font-family: Roboto;
+}
+
+#raw_box{
+    padding: 10px;
+    background-color: #BCBCBC;
+    color: black;
+    font-family: Roboto;
+}
+
+#label_data{
+    color: black;
+}
+
+#label_value_parsing{
+    color: #7B7B7B;
+}

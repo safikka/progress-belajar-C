@@ -16,7 +16,6 @@ void parsing_gsa(unsigned char *buffer){
             update_text(ui_widget.data_atas.gsa,(gchar *)buffer);
         }
 
-
     }
 
 }

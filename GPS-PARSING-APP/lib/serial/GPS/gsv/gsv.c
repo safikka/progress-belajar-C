@@ -16,7 +16,6 @@ void parsing_gsv(unsigned char *buffer){
             update_text(ui_widget.data_atas.gsv,(gchar *)buffer);
         }
 
-
     }
 
 }
