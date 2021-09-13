@@ -33,6 +33,15 @@ void on_window_main_realize(GtkWidget *widget, gpointer *data){
     ui_hide_mouse_pointer(&ui_widget.window);
 }
 
+void on_window_main_close(GtkWidget *widget, gpointer *data){
+    gtk_main_quit();
+}
+
+static void ui_gtk_widget_signal_connect(){
+	g_signal_connect (ui_widget.window, "destroy", (GCallback) on_window_main_close, NULL);
+	g_signal_connect (ui_widget.window, "realize", (GCallback) on_window_main_realize, NULL);
+}
+
 static gboolean gtk_get_object_helper(GtkWidget **_widget_ , gchar *_widget_name_,...){
 	if(_widget_name_ == NULL){
 		g_print("ERROR: WIDGET NAME NOT VALID ! (null)\n");
@@ -198,7 +207,7 @@ int gui_init(int argc, char **argv){
     gtk_init(&argc, &argv);
     get_object();
     ui_gtk_init();
-    g_signal_connect_swapped(G_OBJECT(ui_widget.window),"destroy",G_CALLBACK(gtk_main_quit),NULL);
+    ui_gtk_widget_signal_connect();
     gtk_builder_connect_signals(builder,NULL);
     g_object_unref(builder);
     gtk_widget_show(ui_widget.window);
