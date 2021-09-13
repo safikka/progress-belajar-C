@@ -16,6 +16,22 @@ list_widget ui_widget;
 GtkBuilder  *builder;
 GMutex lockSetRow;
 GMutex lockSetIcon;
+gboolean isGuiRunning = FALSE;
+
+gboolean ui_is_gui_running(){
+    return isGuiRunning;
+}
+
+void ui_hide_mouse_pointer(GtkWidget **widget){
+	GdkCursor* Cursor   = gdk_cursor_new_for_display(gdk_display_get_default(),GDK_BLANK_CURSOR);
+    GdkWindow* win      = gtk_widget_get_window(*widget);
+    gdk_window_set_cursor(win, Cursor);
+}
+
+void on_window_main_realize(GtkWidget *widget, gpointer *data){
+	isGuiRunning = TRUE;
+    ui_hide_mouse_pointer(&ui_widget.window);
+}
 
 static gboolean gtk_get_object_helper(GtkWidget **_widget_ , gchar *_widget_name_,...){
 	if(_widget_name_ == NULL){
@@ -106,7 +122,6 @@ static void ui_gtk_init(){
 
     gtk_style_context_add_provider_for_screen(gdk_screen_get_default(), GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_USER);
     
-	// ui_load_image_helper(&ui_widget.icon_produk,35,35,"asset/logo_tok.png");
 	ui_load_image_helper(&ui_widget.icon_reader,35,35,"asset/logo_tok.png");
     ui_load_image_helper(&ui_widget.icon_internet,35,35,"asset/gsm_off.png");
     ui_load_image_helper(&ui_widget.icon_gps,35,35,"asset/db_off.png");
