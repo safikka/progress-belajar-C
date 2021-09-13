@@ -16,6 +16,13 @@ list_widget ui_widget;
 GtkBuilder  *builder;
 GMutex lockSetRow;
 GMutex lockSetIcon;
+
+
+
+
+
+
+
 gboolean isGuiRunning = FALSE;
 
 gboolean ui_is_gui_running(){
@@ -41,6 +48,12 @@ static void ui_gtk_widget_signal_connect(){
 	g_signal_connect (ui_widget.window, "destroy", (GCallback) on_window_main_close, NULL);
 	g_signal_connect (ui_widget.window, "realize", (GCallback) on_window_main_realize, NULL);
 }
+
+
+
+
+
+
 
 static gboolean gtk_get_object_helper(GtkWidget **_widget_ , gchar *_widget_name_,...){
 	if(_widget_name_ == NULL){
@@ -206,11 +219,12 @@ int gui_init(int argc, char **argv){
     debug(__func__,"INFO:","GUI START");
     gtk_init(&argc, &argv);
     get_object();
-    ui_gtk_init();
     ui_gtk_widget_signal_connect();
+    ui_loading_hide();
+    ui_gtk_init();
     gtk_builder_connect_signals(builder,NULL);
-    g_object_unref(builder);
     gtk_widget_show(ui_widget.window);
+    g_object_unref(builder);
     gtk_main();
 
 }
