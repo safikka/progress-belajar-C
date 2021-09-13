@@ -30,13 +30,15 @@ INCLUDE = $(LIB_PKG_CONFIG) \
 
 SOURCE   = 	src/main.c \
 			lib/serial/shiki-uart-tools.c \
-			lib/serial/GPS/parsing.c \
-			lib/serial/GPS/rmc/rmc.c \
-			lib/serial/GPS/gsa/gsa.c \
-			lib/serial/GPS/gga/gga.c \
-			lib/serial/GPS/gsv/gsv.c \
 			lib/ui/ui.c \
-			lib/db/log.c
+			lib/latihan-tools/latihan-tools.c \
+			# lib/serial/GPS/parsing.c \
+			# lib/serial/GPS/rmc/rmc.c \
+			# lib/serial/GPS/gsa/gsa.c \
+			# lib/serial/GPS/gga/gga.c \
+			# lib/serial/GPS/gsv/gsv.c \
+			# lib/ui/ui.c \
+			# lib/db/log.c
 
 
 TARGET             = parsing

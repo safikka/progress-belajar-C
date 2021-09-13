@@ -1,4 +1,5 @@
 ./lib/db
+./lib/latihan-tools
 ./lib/serial
 ./lib/serial/GPS
 ./lib/serial/GPS/gga

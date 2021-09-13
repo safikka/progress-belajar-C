@@ -1,23 +1,19 @@
-#main_window{
+#mainWindow{
     background-color: white;
-}
-
-#box_header2{
-    background-color: #8E0000;
-    font-family: Roboto;
-}
-
-#raw_box{
-    padding: 10px;
-    background-color: #BCBCBC;
-    color: black;
-    font-family: Roboto;
-}
-
-#label_data{
+    background-repeat: no-repeat;
+    background-position: left top;
     color: black;
 }
 
-#label_value_parsing{
-    color: #7B7B7B;
+#product_info{
+   color: #4069db;
+}
+
+#row_body{
+
+}
+
+#row8{
+    color: black;
+    font-weight: bold;
 }
