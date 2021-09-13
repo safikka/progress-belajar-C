@@ -70,6 +70,8 @@ void get_object(){
 	gtk_get_object_helper(&ui_widget.label_row6     , "lbl-row6");
 	gtk_get_object_helper(&ui_widget.label_row7     , "lbl-row7");
 	gtk_get_object_helper(&ui_widget.image_qr       , "image-qr");
+	gtk_get_object_helper(&ui_widget.icon_produk    , "image-logo2");
+	gtk_get_object_helper(&ui_widget.icon_reader    , "image-logo");
 	gtk_get_object_helper(&ui_widget.icon_gps       , "image-logo3");
 	gtk_get_object_helper(&ui_widget.icon_internet  , "image-logo4");
 
@@ -104,7 +106,8 @@ static void ui_gtk_init(){
 
     gtk_style_context_add_provider_for_screen(gdk_screen_get_default(), GTK_STYLE_PROVIDER(cssProvider), GTK_STYLE_PROVIDER_PRIORITY_USER);
     
-	ui_load_image_helper(&ui_widget.icon_produk,35,35,"asset/logo.png");
+	// ui_load_image_helper(&ui_widget.icon_produk,35,35,"asset/logo_tok.png");
+	ui_load_image_helper(&ui_widget.icon_reader,35,35,"asset/logo_tok.png");
     ui_load_image_helper(&ui_widget.icon_internet,35,35,"asset/gsm_off.png");
     ui_load_image_helper(&ui_widget.icon_gps,35,35,"asset/db_off.png");
 }
