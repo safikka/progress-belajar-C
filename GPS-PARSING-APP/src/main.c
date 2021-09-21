@@ -24,11 +24,11 @@ list_widget ui_widget;
 int main(int argc, char *argv[]){
 
 
-    ui_set_text(ROW_4,"HASIL QR");
-    ui_set_text(ROW_5,"loading ...");
-    ui_set_text(ROW_5,"tes");
-    gui_init(0,NULL);
-    // baca_serial();
+    // ui_set_text(ROW_4,"HASIL QR");
+    // ui_set_text(ROW_5,"loading ...");
+    // ui_set_text(ROW_5,"tes");
+    gui_init();
+    sqr_start();
     return 0;
 
 }

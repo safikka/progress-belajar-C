@@ -355,12 +355,12 @@ void ui_start(int argc, char **argv){
     gtk_main();
 }
 
-// void *th_gui(void *arg){
-// 	debug(__func__, "INFO:", "GUI thread started successfully");
-//     pthread_detach(pthread_self());
-// 	ui_start(0,NULL);
-// 	pthread_exit(NULL);
-// }
+void *th_gui(void *arg){
+	debug(__func__, "INFO:", "GUI thread started successfully");
+    pthread_detach(pthread_self());
+	ui_start(0,NULL);
+	pthread_exit(NULL);
+}
 
 int gui_init(int argc, char **argv){
 
@@ -372,14 +372,14 @@ int gui_init(int argc, char **argv){
 
     // INI DIBIKIN THREAD MALAH GAMAU MUNCUL DAH GIMANA SI
     
-    // pthread_t th_ui;
-    // if(pthread_create(&th_ui, NULL, (void*) th_gui, NULL) != 0){
-	// 	debug(__func__, "ERROR:", "GUI thread start failed!");
-	// 	return 1;
-	// 	exit(EXIT_FAILURE);
-	// }
-	// return 0;
+    pthread_t th_ui;
+    if(pthread_create(&th_ui, NULL, (void*) th_gui, NULL) != 0){
+		debug(__func__, "ERROR:", "GUI thread start failed!");
+		return 1;
+		exit(EXIT_FAILURE);
+	}
+	return 0;
 
-    ui_start(0, NULL);
+    // ui_start(0, NULL);
 
 }
