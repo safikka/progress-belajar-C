@@ -7,7 +7,7 @@
 #include "db/log.h"
 #include "ui/ui.h"
 
-static int  fdesc_qr = -1;
+// static int  fdesc_qr = -1;
 GMutex lock;
 list_widget ui_widget;
 
@@ -53,14 +53,15 @@ void* sqr_read(void* arg){
     int16_t received = 0;
 
     debug(__func__,"INFO:","QR THREAD START");
-    suart_close(fdesc_qr);
-    fdesc_qr = -1;
-    while(fdesc_qr <= 0){
-        // debug(__func__,"WARNING:","QR NOT OPENED");
-        fdesc_qr = suart_open("/dev/ttyUSB0", 9600, 1, 0);
-        sleep(1);
-    }
-    suart_flush(fdesc_qr);
+    // suart_close(fdesc_qr);
+    // fdesc_qr = -1;
+    // while(fdesc_qr <= 0){
+    //     // debug(__func__,"WARNING:","QR NOT OPENED");
+    //     fdesc_qr = suart_open("/dev/ttyUSB0", 9600, 1, 0);
+    //     sleep(1);
+    // }
+    // suart_flush(fdesc_qr);
+    int fdesc_qr = suart_open("/dev/ttyUSB0", 9600, 1, 0);
     unsigned char *recv = NULL;
     while(1){
         recv = suart_read_chuncked_data(fdesc_qr,100,(unsigned char *) "\n",1,&received);
