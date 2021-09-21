@@ -57,7 +57,7 @@ void* sqr_read(void* arg){
     fdesc_qr = -1;
     while(fdesc_qr <= 0){
         debug(__func__,"WARNING:","QR NOT OPENED");
-        fdesc_qr = suart_open("/dev/ttyUSB0", 4800, 1, 0);
+        fdesc_qr = suart_open("/dev/ttyUSB0", 9600, 1, 0);
         sleep(1);
     }
     suart_flush(fdesc_qr);
