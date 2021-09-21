@@ -28,6 +28,6 @@ int main(int argc, char *argv[]){
     // ui_set_text(ROW_5,"loading ...");
     // ui_set_text(ROW_5,"tes");
     gui_init();
-    // sqr_start();
+    sqr_start();
     return 0;
 }
