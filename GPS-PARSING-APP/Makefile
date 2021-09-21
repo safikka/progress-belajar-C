@@ -30,8 +30,10 @@ INCLUDE = $(LIB_PKG_CONFIG) \
 
 SOURCE   = 	src/main.c \
 			lib/serial/shiki-uart-tools.c \
+			lib/serial/QR/serial-qr.c \
 			lib/ui/ui.c \
 			lib/latihan-tools/latihan-tools.c \
+			lib/latihan-tools/shiki-time-tools/shiki-time-tools.c \
 			# lib/serial/GPS/parsing.c \
 			# lib/serial/GPS/rmc/rmc.c \
 			# lib/serial/GPS/gsa/gsa.c \

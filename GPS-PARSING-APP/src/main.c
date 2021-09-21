@@ -13,19 +13,22 @@
 #include <gtk/gtk.h>
 #include <sqlite3.h>
 
-#include "serial/shiki-uart-tools.h"
+// #include "serial/shiki-uart-tools.h"
 #include "db/log.h"
 #include "ui/ui.h"
-#include "serial/GPS/parsing.h"
+#include "serial/QR/serial-qr.h"
+
+list_widget ui_widget;
 
 
 int main(int argc, char *argv[]){
 
-    // gtk_init(&argc, &argv);
 
-    // get_object();
-    
-    // gtk_main();
+    ui_set_text(ROW_4,"HASIL QR");
+    ui_set_text(ROW_5,"loading ...");
+    ui_set_text(ROW_5,"tes");
     gui_init(0,NULL);
+    // baca_serial();
     return 0;
+
 }

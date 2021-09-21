@@ -54,6 +54,7 @@ char lbl_version[15];
 void get_object();
 void ui_connect_css();
 int gui_init();
+void ui_set_text(UI_ROW __row__,char *__text__,...);
 void update_text(list_widget *_widget_, char *_text_);
 
 #endif

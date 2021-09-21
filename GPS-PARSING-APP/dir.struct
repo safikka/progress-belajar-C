@@ -1,10 +1,13 @@
 ./lib/db
 ./lib/latihan-tools
+./lib/latihan-tools/shiki-time-tools
+./lib/latihan-tools/shiki-uart-tools
 ./lib/serial
 ./lib/serial/GPS
 ./lib/serial/GPS/gga
 ./lib/serial/GPS/gsa
 ./lib/serial/GPS/gsv
 ./lib/serial/GPS/rmc
+./lib/serial/QR
 ./lib/ui
 ./src

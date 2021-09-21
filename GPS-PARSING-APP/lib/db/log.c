@@ -5,7 +5,7 @@
 #include "log.h"
 
 
-int8_t gps_log_open(const char *_file_,sqlite3 **_db_){
+int8_t log_open(const char *_file_,sqlite3 **_db_){
     int ret = sqlite3_open(_file_, _db_);
     if(ret != SQLITE_OK){
         printf("%s\n",sqlite3_errstr(ret));
@@ -14,7 +14,7 @@ int8_t gps_log_open(const char *_file_,sqlite3 **_db_){
     return SQLITE_OK;
 }
 
-int8_t gps_log_close(sqlite3 ** _db_){
+int8_t log_close(sqlite3 ** _db_){
 	if (sqlite3_close(*_db_) != SQLITE_OK){
 	   return -1;
 	}
@@ -32,7 +32,7 @@ int8_t gps_log_close(sqlite3 ** _db_){
  * @param __table_name 
  * @param __col 
  */
-void gps_log_add_column(sqlite3 *__db__,char*__table_name,char *__col){
+void log_add_column(sqlite3 *__db__,char*__table_name,char *__col){
 	char *cmd = NULL;
 	cmd = sqlite3_mprintf("ALTER TABLE %s ADD COLUMN %s;",__table_name,__col);
   if(cmd == NULL) return;
@@ -55,22 +55,17 @@ int simpan_db(struct log_data_t *_data_){
     const char *namaFileDb = "dataAPP.db";
     sqlite3 *db=NULL;
 
-    int ret = gps_log_open(namaFileDb,&db);
+    int ret = log_open(namaFileDb,&db);
     if(ret != SQLITE_OK){
         return -1;
     }
 
     char *perintah_db = NULL;
 
-    perintah_db = sqlite3_mprintf("CREATE TABLE IF NOT EXISTS gprmc("
+    perintah_db = sqlite3_mprintf("CREATE TABLE IF NOT EXISTS hasil_data("
                                 "datetime TEXT,"
                                 "status TEXT,"
-                                "lat REAL,"
-                                "lon REAL,"
-                                "speed REAL,"
-                                "numsat REAL,"
-                                "hdop REAL,"
-                                "altitude REAL)"
+                                "data TEXT)"
     );
 
     
@@ -86,14 +81,9 @@ int simpan_db(struct log_data_t *_data_){
     
 
     perintah_db = sqlite3_mprintf("INSERT INTO gprmc(datetime,status,lat,lon,speed)"
-                                  "VALUES('%s','%c', %lf, %lf, %lf, %lf, %lf, %lf)",_data_->datetime,
-                                                                                    _data_->status,
-                                                                                    _data_->lat,
-                                                                                    _data_->lon,
-                                                                                    _data_->speed,
-                                                                                    _data_->numsat,
-                                                                                    _data_->hdop,
-                                                                                    _data_->altitude
+                                  "VALUES('%s','%s', %s)",     _data_->datetime,
+                                                                _data_->status,
+                                                                _data_->read_data
     );
 
     
