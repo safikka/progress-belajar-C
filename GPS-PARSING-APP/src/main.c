@@ -29,7 +29,6 @@ int main(int argc, char *argv[]){
     // ui_set_text(ROW_5,"tes");
     GError *error = NULL;
     g_thread_try_new("baca serial",sqr_start,NULL,&error);
-    g_thread_try_new("gui",gui_init,NULL,&error);
     if(error != NULL){
         g_print("error code: %d\n", error->code);
         g_print("error msg: %s\n", error->message);
@@ -37,6 +36,6 @@ int main(int argc, char *argv[]){
         exit(EXIT_FAILURE);
     }
 
-    // gui_init();
+    gui_init();
     return 0;
 }
